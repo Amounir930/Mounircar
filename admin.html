@@ -122,8 +122,16 @@
         .pw-table-container {
             max-height: 400px;
             overflow-y: auto;
+            overflow-x: auto;
             border-radius: 14px;
             border: 1px solid var(--card-border);
+        }
+        .pw-table-container table {
+            min-width: 500px;
+            width: 100%;
+        }
+        .pw-table-container th, .pw-table-container td {
+            vertical-align: middle;
         }
         .pw-input {
             background: rgba(255, 255, 255, 0.05);
@@ -297,9 +305,9 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>الإدارة التشغيلية</th>
-                                <th>كلمة المرور</th>
-                                <th style="width: 80px; text-align: center;">إجراءات</th>
+                                <th style="width: 45%;">الإدارة التشغيلية</th>
+                                <th style="width: 40%;">كلمة المرور</th>
+                                <th style="width: 15%; text-align: center;">إجراءات</th>
                             </tr>
                         </thead>
                         <tbody id="passwordsTableBody">
