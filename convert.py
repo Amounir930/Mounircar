@@ -22,7 +22,11 @@ def get_mongo_client():
                 print(f"Warning: could not read .env: {e}")
     if not uri:
         raise RuntimeError("MONGODB_URI is not set. Configure it as an environment variable on Vercel.")
-    return pymongo.MongoClient(uri, serverSelectionTimeoutMS=8000), uri
+    return pymongo.MongoClient(
+        uri,
+        serverSelectionTimeoutMS=8000,
+        tlsAllowInvalidCertificates=True
+    ), uri
 
 
 EXCEL_FILE = "Data.xlsx"
