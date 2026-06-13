@@ -70,14 +70,17 @@ def clean_plate(plate):
         return full
     return plate_str
 
-def main():
-    if not os.path.exists(EXCEL_FILE):
-        print(f"Error: {EXCEL_FILE} not found. Please put your Excel file in the directory.")
+def main(excel_file=None):
+    if excel_file is None:
+        excel_file = EXCEL_FILE
+        
+    if not os.path.exists(excel_file):
+        print(f"Error: {excel_file} not found. Please put your Excel file in the directory.")
         return
 
-    print(f"Reading {EXCEL_FILE}...")
+    print(f"Reading {excel_file}...")
     try:
-        df = pd.read_excel(EXCEL_FILE)
+        df = pd.read_excel(excel_file)
         
         # Clean columns
         df['رقم السيارة'] = df['رقم السيارة'].astype(str).str.strip()
@@ -124,7 +127,10 @@ def main():
             })
             
         # Create output dir if not exists
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
+        try:
+            os.makedirs(OUTPUT_DIR, exist_ok=True)
+        except Exception as e:
+            print(f"Warning: could not create output directory {OUTPUT_DIR}: {e}")
         
         # Save records as JSON (as fallback/cache)
         try:

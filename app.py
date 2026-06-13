@@ -119,9 +119,12 @@ def handle_passwords():
                 new_passwords['admin'] = 'admin123'
                 
             # 1. Write to local file first
-            os.makedirs(os.path.dirname(passwords_file), exist_ok=True)
-            with open(passwords_file, 'w', encoding='utf-8') as f:
-                json.dump(new_passwords, f, ensure_ascii=False, indent=2)
+            try:
+                os.makedirs(os.path.dirname(passwords_file), exist_ok=True)
+                with open(passwords_file, 'w', encoding='utf-8') as f:
+                    json.dump(new_passwords, f, ensure_ascii=False, indent=2)
+            except Exception as le:
+                print(f"Warning: could not write passwords.json locally (read-only filesystem): {le}")
                 
             # 2. Write to MongoDB if connected
             if db is not None:
@@ -167,15 +170,17 @@ def handle_upload():
         return jsonify({"error": "يجب رفع ملف اكسيل فقط (.xlsx أو .xls)"}), 400
         
     try:
-        # Save Excel file as Data.xlsx
-        excel_path = "Data.xlsx"
+        # Save Excel file to the writable temporary directory (cross-platform)
+        import tempfile
+        temp_dir = tempfile.gettempdir()
+        excel_path = os.path.join(temp_dir, "Data.xlsx")
         file.save(excel_path)
         
         # Programmatically run convert.py
         import convert
         import importlib
         importlib.reload(convert)
-        convert.main()
+        convert.main(excel_path)
         
         return jsonify({"success": True, "message": "تم رفع وتحديث ملف الاكسيل وقاعدة البيانات بنجاح!"})
     except Exception as e:
@@ -221,9 +226,12 @@ def handle_mongodb_config():
             test_client = pymongo.MongoClient(uri, serverSelectionTimeoutMS=2000)
             test_client.server_info() # Will raise exception if connection fails
             
-            # Save configuration to .env
-            with open(env_path, 'w', encoding='utf-8') as f:
-                f.write(f"MONGODB_URI={uri}\n")
+            # Save configuration to .env if writable
+            try:
+                with open(env_path, 'w', encoding='utf-8') as f:
+                    f.write(f"MONGODB_URI={uri}\n")
+            except Exception as env_err:
+                print(f"Warning: could not write .env locally (read-only filesystem): {env_err}")
                 
             # Delete old mongodb_config.json if it exists to clean up
             if os.path.exists(config_path):
