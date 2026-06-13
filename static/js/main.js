@@ -211,7 +211,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 maxEl = el;
                 maxCount = modeMap[el];
             }
-            // Load static data on startup
+        }
+        return maxEl;
+    }
+
+    // Load static data on startup
     const loadStaticData = () => {
         spinner.style.display = 'block';
         infoState.style.display = 'none';
@@ -324,7 +328,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         debounceTimer = setTimeout(() => {
-            fetch(`/api/search/autocomplete?q=${encodeURIComponent(query)}`)
+            const userDept = localStorage.getItem('user_department');
+            let url = `/api/search/autocomplete?q=${encodeURIComponent(query)}`;
+            if (userDept && userDept !== 'admin') {
+                url += `&department=${encodeURIComponent(userDept)}`;
+            }
+            fetch(url)
                 .then(res => res.json())
                 .then(matches => {
                     renderSuggestions(matches);
@@ -417,7 +426,12 @@ document.addEventListener('DOMContentLoaded', () => {
         dashboardContent.classList.remove('active');
         infoState.style.display = 'none';
 
-        fetch(`/api/search/car?plate=${encodeURIComponent(plate)}`)
+        const userDept = localStorage.getItem('user_department');
+        let url = `/api/search/car?plate=${encodeURIComponent(plate)}`;
+        if (userDept && userDept !== 'admin') {
+            url += `&department=${encodeURIComponent(userDept)}`;
+        }
+        fetch(url)
             .then(res => {
                 if (!res.ok) {
                     return res.json().then(errData => {

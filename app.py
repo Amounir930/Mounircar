@@ -250,6 +250,9 @@ def autocomplete():
         db = get_db()
         transactions_col = db["transactions"]
         query = {"plate": {"$regex": re.escape(q), "$options": "i"}}
+        dept = request.args.get('department', '').strip()
+        if dept:
+            query["department"] = dept
         plates = transactions_col.distinct("plate", query)
         return jsonify(plates[:15])
     except Exception as e:
@@ -267,7 +270,11 @@ def search_car():
     try:
         db = get_db()
         transactions_col = db["transactions"]
-        txs = list(transactions_col.find({"plate": plate}, {"_id": 0}))
+        query = {"plate": plate}
+        dept = request.args.get('department', '').strip()
+        if dept:
+            query["department"] = dept
+        txs = list(transactions_col.find(query, {"_id": 0}))
         if not txs:
             return jsonify({"error": "لم يتم العثور على أي حركة صرف لرقم السيارة المدخل."}), 404
 
