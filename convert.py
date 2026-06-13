@@ -5,8 +5,21 @@ import pandas as pd
 import pymongo
 
 def get_mongo_client():
-    config_path = "mongodb_config.json"
     uri = "mongodb://localhost:27017/"
+    
+    # Try to load MONGODB_URI from .env first
+    if os.path.exists(".env"):
+        try:
+            with open(".env", "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip().startswith("MONGODB_URI="):
+                        uri = line.strip().split("MONGODB_URI=", 1)[1].strip()
+                        return pymongo.MongoClient(uri, serverSelectionTimeoutMS=5000), uri
+        except Exception as e:
+            print(f"Warning: could not read .env: {e}")
+            
+    # Fallback to mongodb_config.json if it exists
+    config_path = "mongodb_config.json"
     if os.path.exists(config_path):
         try:
             with open(config_path, 'r', encoding='utf-8') as f:
@@ -14,6 +27,7 @@ def get_mongo_client():
                 uri = config.get("mongodb_uri", uri)
         except Exception as e:
             print(f"Warning: could not read mongodb_config.json: {e}")
+            
     return pymongo.MongoClient(uri, serverSelectionTimeoutMS=5000), uri
 
 

@@ -8,8 +8,21 @@ from flask import Flask, send_from_directory, redirect, url_for, request, jsonif
 app = Flask(__name__, static_folder='static')
 
 def get_mongo_client():
-    config_path = "mongodb_config.json"
     uri = "mongodb://localhost:27017/"
+    
+    # Try to load MONGODB_URI from .env first
+    if os.path.exists(".env"):
+        try:
+            with open(".env", "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip().startswith("MONGODB_URI="):
+                        uri = line.strip().split("MONGODB_URI=", 1)[1].strip()
+                        return pymongo.MongoClient(uri, serverSelectionTimeoutMS=2000), uri
+        except Exception as e:
+            print(f"Warning: could not read .env in app.py: {e}")
+            
+    # Fallback to mongodb_config.json
+    config_path = "mongodb_config.json"
     if os.path.exists(config_path):
         try:
             with open(config_path, 'r', encoding='utf-8') as f:
@@ -17,6 +30,7 @@ def get_mongo_client():
                 uri = config.get("mongodb_uri", uri)
         except Exception as e:
             print(f"Warning: could not read mongodb_config.json in app.py: {e}")
+            
     return pymongo.MongoClient(uri, serverSelectionTimeoutMS=2000), uri
 
 
@@ -171,13 +185,29 @@ def handle_upload():
 @app.route('/api/admin/mongodb_config', methods=['GET', 'POST'])
 def handle_mongodb_config():
     config_path = "mongodb_config.json"
+    env_path = ".env"
+    
     if request.method == 'GET':
+        # 1. Try to read from .env first
+        if os.path.exists(env_path):
+            try:
+                with open(env_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        if line.strip().startswith("MONGODB_URI="):
+                            uri = line.strip().split("MONGODB_URI=", 1)[1].strip()
+                            return jsonify({"mongodb_uri": uri})
+            except Exception as e:
+                print(f"Warning: could not read .env: {e}")
+                
+        # 2. Fallback to mongodb_config.json
         if os.path.exists(config_path):
             try:
                 with open(config_path, 'r', encoding='utf-8') as f:
-                    return jsonify(json.load(f))
+                    data = json.load(f)
+                    return jsonify({"mongodb_uri": data.get("mongodb_uri", "")})
             except Exception as e:
                 return jsonify({"error": str(e)}), 500
+                
         return jsonify({"mongodb_uri": "mongodb://localhost:27017/"})
         
     elif request.method == 'POST':
@@ -191,11 +221,18 @@ def handle_mongodb_config():
             test_client = pymongo.MongoClient(uri, serverSelectionTimeoutMS=2000)
             test_client.server_info() # Will raise exception if connection fails
             
-            # Save configuration
-            with open(config_path, 'w', encoding='utf-8') as f:
-                json.dump({"mongodb_uri": uri}, f, ensure_ascii=False, indent=2)
+            # Save configuration to .env
+            with open(env_path, 'w', encoding='utf-8') as f:
+                f.write(f"MONGODB_URI={uri}\n")
                 
-            return jsonify({"success": True, "message": "تم حفظ واختبار رابط اتصال MongoDB بنجاح!"})
+            # Delete old mongodb_config.json if it exists to clean up
+            if os.path.exists(config_path):
+                try:
+                    os.remove(config_path)
+                except:
+                    pass
+                
+            return jsonify({"success": True, "message": "تم حفظ واختبار رابط اتصال MongoDB بنجاح في ملف .env المستبعد!"})
         except Exception as e:
             return jsonify({"error": f"فشل الاتصال بقاعدة البيانات: {str(e)}"}), 500
 
