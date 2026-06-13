@@ -26,31 +26,7 @@
                 grid-template-columns: 1fr 1.5fr;
             }
         }
-        .admin-header-actions {
-            display: flex;
-            gap: 1rem;
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-        .back-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--card-border);
-            color: var(--text-primary);
-            padding: 0.5rem 1.2rem;
-            border-radius: 12px;
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 600;
-            transition: all var(--transition-speed);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .back-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-1px);
-        }
+
         .upload-area {
             border: 2px dashed rgba(99, 102, 241, 0.4);
             border-radius: 20px;
@@ -122,6 +98,7 @@
         .pw-table-container {
             max-height: 400px;
             overflow-y: auto;
+            overflow-x: auto;
             border-radius: 14px;
             border: 1px solid var(--card-border);
         }
@@ -219,13 +196,16 @@
     <div class="bg-decor-2"></div>
 
     <div class="container">
-        <!-- Header -->
-        <header style="position: relative;">
-            <div class="admin-header-actions">
+        <!-- Top Navigation -->
+        <div class="top-nav">
+            <div class="nav-actions-left">
                 <a href="index.html" class="back-btn"><i class="fas fa-home"></i> العودة للرئيسية</a>
-                <a href="#" onclick="handleLogout(event)" class="logout-btn-header" style="position: static;" title="تسجيل الخروج"><i class="fas fa-sign-out-alt"></i> خروج</a>
+                <a href="#" onclick="handleLogout(event)" class="logout-btn-header" title="تسجيل الخروج"><i class="fas fa-sign-out-alt"></i> خروج</a>
             </div>
-            
+        </div>
+
+        <!-- Header -->
+        <header>
             <div class="logo-container">
                 <i class="fas fa-user-cog logo-icon"></i>
             </div>

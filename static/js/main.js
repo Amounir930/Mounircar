@@ -151,6 +151,39 @@ document.addEventListener('DOMContentLoaded', () => {
             detailedTableBody.appendChild(tr);
         });
         updateHeaderIcons('car');
+
+        // Render mobile cards
+        const mobileList = document.getElementById('carDetailedMobileList');
+        if (mobileList) {
+            mobileList.innerHTML = '';
+            txs.forEach(tx => {
+                const card = document.createElement('div');
+                card.className = 'mobile-card';
+                card.innerHTML = `
+                    <div class="mobile-card-header">
+                        <span class="mobile-card-title"><i class="fas fa-receipt"></i> حركة رقم ${tx.movement_number}</span>
+                        <span class="mobile-card-date">${tx.date}</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label"><i class="fas fa-fill-drip"></i> كمية الصرف:</span>
+                        <span class="mobile-card-value highlight-qty">${formatNumber(tx.quantity, 2)} لتر</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label"><i class="fas fa-coins"></i> القيمة:</span>
+                        <span class="mobile-card-value highlight-val">${formatNumber(tx.value, 2)} ج.م</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label"><i class="fas fa-gas-pump"></i> المحطة:</span>
+                        <span class="mobile-card-value">${tx.station}</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label"><i class="fas fa-info-circle"></i> الوصف:</span>
+                        <span class="mobile-card-value">${tx.description}</span>
+                    </div>
+                `;
+                mobileList.appendChild(card);
+            });
+        }
     };
 
     // Render Region Detailed Table
@@ -170,6 +203,43 @@ document.addEventListener('DOMContentLoaded', () => {
             regionDetailedTableBody.appendChild(tr);
         });
         updateHeaderIcons('region');
+
+        // Render mobile cards
+        const mobileList = document.getElementById('regionDetailedMobileList');
+        if (mobileList) {
+            mobileList.innerHTML = '';
+            txs.forEach(tx => {
+                const card = document.createElement('div');
+                card.className = 'mobile-card';
+                card.innerHTML = `
+                    <div class="mobile-card-header">
+                        <span class="mobile-card-title"><i class="fas fa-receipt"></i> حركة رقم ${tx.movement_number}</span>
+                        <span class="mobile-card-date">${tx.date}</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label"><i class="fas fa-car-side"></i> رقم اللوحة:</span>
+                        <span class="mobile-card-value highlight">${tx.plate}</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label"><i class="fas fa-fill-drip"></i> كمية الصرف:</span>
+                        <span class="mobile-card-value highlight-qty">${formatNumber(tx.quantity, 2)} لتر</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label"><i class="fas fa-coins"></i> القيمة:</span>
+                        <span class="mobile-card-value highlight-val">${formatNumber(tx.value, 2)} ج.م</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label"><i class="fas fa-gas-pump"></i> المحطة:</span>
+                        <span class="mobile-card-value">${tx.station}</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label"><i class="fas fa-info-circle"></i> الوصف:</span>
+                        <span class="mobile-card-value">${tx.description}</span>
+                    </div>
+                `;
+                mobileList.appendChild(card);
+            });
+        }
     };
 
     // Add click listeners to headers
@@ -545,6 +615,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     `;
                     regionVehiclesTableBody.appendChild(tr);
                 });
+
+                // Render mobile cards for Region Vehicles
+                const vehiclesMobileList = document.getElementById('regionVehiclesMobileList');
+                if (vehiclesMobileList) {
+                    vehiclesMobileList.innerHTML = '';
+                    vehiclesList.forEach(veh => {
+                        const card = document.createElement('div');
+                        card.className = 'mobile-card';
+                        card.innerHTML = `
+                            <div class="mobile-card-header">
+                                <span class="mobile-card-title"><i class="fas fa-car"></i> ${veh.description}</span>
+                            </div>
+                            <div class="mobile-card-row">
+                                <span class="mobile-card-label"><i class="fas fa-fill-drip"></i> إجمالي الكمية:</span>
+                                <span class="mobile-card-value highlight-qty">${formatNumber(veh.quantity, 2)} لتر</span>
+                            </div>
+                            <div class="mobile-card-row">
+                                <span class="mobile-card-label"><i class="fas fa-coins"></i> إجمالي القيمة:</span>
+                                <span class="mobile-card-value highlight-val">${formatNumber(veh.value, 2)} ج.م</span>
+                            </div>
+                            <div class="mobile-card-row">
+                                <span class="mobile-card-label"><i class="fas fa-exchange-alt"></i> عدد الحركات:</span>
+                                <span class="mobile-card-value">${veh.transactions}</span>
+                            </div>
+                        `;
+                        vehiclesMobileList.appendChild(card);
+                    });
+                }
 
                 // Toggle Results Panels
                 regionResultsGrid.style.display = 'grid';
