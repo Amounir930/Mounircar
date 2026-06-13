@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <script>
+        // Direct authentication check to prevent content flashing
+        if (localStorage.getItem('logged_in') !== 'true') {
+            window.location.href = 'login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منظومة الاستعلام عن حركات صرف الوقود للمركبات</title>
+    <!-- Font Awesome for premium icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom stylesheet -->
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <!-- Background visual decor elements -->
+    <div class="bg-decor"></div>
+    <div class="bg-decor-2"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <header style="position: relative;">
+            <a href="#" onclick="handleLogout(event)" class="logout-btn-header" title="تسجيل الخروج"><i class="fas fa-sign-out-alt"></i> خروج</a>
+            <a href="admin.html" id="adminPanelBtn" class="back-btn" style="position: absolute; top: 0; left: 80px; display: none; padding: 0.5rem 1.2rem; border-radius: 12px; font-size: 0.9rem; font-weight: 600; text-decoration: none; align-items: center; gap: 0.5rem; border: 1px solid var(--card-border); background: rgba(255, 255, 255, 0.08); color: var(--text-primary);" title="لوحة التحكم للنظام"><i class="fas fa-user-cog"></i> لوحة التحكم</a>
+            <div class="logo-container">
+                <i class="fas fa-gas-pump logo-icon"></i>
+            </div>
+            <h1>منظومة الاستعلام عن حركات صرف المركبات</h1>
+            <p>ابحث برقم لوحة السيارة لعرض تقارير حركات الصرف والكميات والقيم بالتفصيل</p>
+        </header>
+
+        <!-- Search Section -->
+        <div id="searchWrapper" class="search-wrapper">
+            <!-- Car Search Box -->
+            <div id="carSearchContainer" class="search-box-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="searchInput" class="search-input" placeholder="اكتب رقم لوحة السيارة (مثال: 256 ق م ص)..." autocomplete="off">
+                <button id="searchBtn" class="search-btn">ابحـث الآن</button>
+            </div>
+            <!-- Autocomplete suggestions dropdown -->
+            <ul id="suggestionsList" class="suggestions-list"></ul>
+
+            <!-- Region Search Box -->
+            <div id="regionSearchContainer" class="search-box-container">
+                <i class="fas fa-map-marker-alt search-icon"></i>
+                <select id="regionSelect" class="search-input select-input">
+                    <option value="">اختر المنطقة / إدارة التشغيل...</option>
+                </select>
+                <button id="searchRegionBtn" class="search-btn">ابحـث الآن</button>
+            </div>
+        </div>
+
+        <!-- Spinner -->
+        <div id="spinner" class="spinner"></div>
+
+        <!-- Info/Initial State -->
+        <div id="infoState" class="info-state">
+            <div class="info-icon"><i class="fas fa-search-dollar"></i></div>
+            <h3>بانتظار البحث...</h3>
+            <p>يرجى إدخال رقم لوحة السيارة في مربع البحث أعلاه لعرض البيانات والإحصائيات الخاصة بحركات الصرف.</p>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboardContent" class="dashboard-content">
+            <!-- KPI Cards Row -->
+            <div class="kpi-container">
+                <div class="kpi-card quantity">
+                    <div class="kpi-icon"><i class="fas fa-fill-drip"></i></div>
+                    <div class="kpi-title">إجمالي كمية الصرف</div>
+                    <div id="kpiQuantity" class="kpi-value text-number">0.00 <span class="kpi-unit">لتر</span></div>
+                </div>
+
+                <div class="kpi-card value">
+                    <div class="kpi-icon"><i class="fas fa-coins"></i></div>
+                    <div class="kpi-title">إجمالي قيمة الصرف</div>
+                    <div id="kpiValue" class="kpi-value text-number">0.00 <span class="kpi-unit">ج.م</span></div>
+                </div>
+
+                <div class="kpi-card transactions">
+                    <div class="kpi-icon"><i class="fas fa-exchange-alt"></i></div>
+                    <div class="kpi-title">إجمالي عدد الحركات</div>
+                    <div id="kpiTransactions" class="kpi-value text-number">0 <span class="kpi-unit">حركة</span></div>
+                </div>
+
+                <div class="kpi-card dept">
+                    <div class="kpi-icon"><i class="fas fa-building"></i></div>
+                    <div id="kpiDeptTitle" class="kpi-title">الإدارة التشغيلية الغالبة</div>
+                    <div id="kpiDept" class="kpi-value">غير محدد</div>
+                </div>
+
+
+
+
+            </div>
+
+            <!-- Results Grid (Car Mode) -->
+            <div id="carResultsGrid" class="results-grid">
+                <!-- Panel 1: Detailed transactions -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title"><i class="fas fa-list-ul"></i> تفاصيل حركات الصرف</h2>
+                        <span class="badge">سجل العمليات</span>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="sortable-header" data-table="car" data-key="movement_number">رقم الحركة <i class="fas fa-sort"></i></th>
+                                    <th class="sortable-header" data-table="car" data-key="date">تاريخ حركة الصرف <i class="fas fa-sort"></i></th>
+                                    <th class="sortable-header" data-table="car" data-key="quantity">كمية الصرف <i class="fas fa-sort"></i></th>
+                                    <th class="sortable-header" data-table="car" data-key="value">قيمة الصرف <i class="fas fa-sort"></i></th>
+                                    <th class="sortable-header" data-table="car" data-key="station">اسم المحطة <i class="fas fa-sort"></i></th>
+                                    <th class="sortable-header" data-table="car" data-key="description">الوصف <i class="fas fa-sort"></i></th>
+                                </tr>
+                            </thead>
+                            <tbody id="detailedTableBody">
+                                <!-- Populated dynamically by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Panel 2: Summary by Description -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title"><i class="fas fa-file-invoice-dollar"></i> إجمالي الصرف حسب الوصف</h2>
+                        <span class="badge">ملخص وصف الكارت</span>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>الوصف</th>
+                                    <th>إجمالي الكمية (لتر)</th>
+                                    <th>إجمالي القيمة (ج.م)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="descTableBody">
+                                <!-- Populated dynamically by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Grid (Region Mode) -->
+            <div id="regionResultsGrid" class="results-grid" style="display: none;">
+                <!-- Panel 1: Detailed transactions in Region -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title"><i class="fas fa-list-ul"></i> سجل حركات الصرف بالمنطقة</h2>
+                        <span class="badge">العمليات التفصيلية</span>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="sortable-header" data-table="region" data-key="movement_number">رقم الحركة <i class="fas fa-sort"></i></th>
+                                    <th class="sortable-header" data-table="region" data-key="date">تاريخ حركة الصرف <i class="fas fa-sort"></i></th>
+                                    <th class="sortable-header" data-table="region" data-key="plate">رقم اللوحة <i class="fas fa-sort"></i></th>
+                                    <th class="sortable-header" data-table="region" data-key="quantity">كمية الصرف <i class="fas fa-sort"></i></th>
+                                    <th class="sortable-header" data-table="region" data-key="value">قيمة الصرف <i class="fas fa-sort"></i></th>
+                                    <th class="sortable-header" data-table="region" data-key="station">اسم المحطة <i class="fas fa-sort"></i></th>
+                                    <th class="sortable-header" data-table="region" data-key="description">الوصف <i class="fas fa-sort"></i></th>
+                                </tr>
+                            </thead>
+                            <tbody id="regionDetailedTableBody">
+                                <!-- Populated dynamically by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Panel 2: Aggregated totals by Vehicle -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title"><i class="fas fa-car-side"></i> إجمالي صرف السيارات بالمنطقة</h2>
+                        <span class="badge">ملخص السيارات</span>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>وصف الكارت</th>
+                                    <th>إجمالي الكمية (لتر)</th>
+                                    <th>إجمالي القيمة (ج.م)</th>
+                                    <th>عدد الحركات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="regionVehiclesTableBody">
+                                <!-- Populated dynamically by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const userDept = localStorage.getItem('user_department');
+            if (userDept === 'admin') {
+                const adminBtn = document.getElementById('adminPanelBtn');
+                if (adminBtn) {
+                    adminBtn.style.display = 'inline-flex';
+                }
+            }
+        });
+
+        function handleLogout(event) {
+            event.preventDefault();
+            localStorage.removeItem('logged_in');
+            localStorage.removeItem('user_department');
+            window.location.href = 'login.html';
+        }
+    </script>
+    <!-- Scripts -->
+    <script src="static/js/main.js"></script>
+</body>
+</html>

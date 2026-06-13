@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <script>
+        // Restrict access to admin only
+        if (localStorage.getItem('logged_in') !== 'true' || localStorage.getItem('user_department') !== 'admin') {
+            window.location.href = 'login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - منظومة الاستعلام عن حركات الصرف</title>
+    <!-- Font Awesome for premium icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom stylesheet -->
+    <link rel="stylesheet" href="static/css/style.css">
+    <style>
+        .admin-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        @media (min-width: 992px) {
+            .admin-grid {
+                grid-template-columns: 1fr 1.5fr;
+            }
+        }
+        .admin-header-actions {
+            display: flex;
+            gap: 1rem;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .back-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
+            padding: 0.5rem 1.2rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all var(--transition-speed);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+        .upload-area {
+            border: 2px dashed rgba(99, 102, 241, 0.4);
+            border-radius: 20px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            background: rgba(99, 102, 241, 0.03);
+            cursor: pointer;
+            transition: all var(--transition-speed);
+            margin-bottom: 1.5rem;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--accent-color);
+            background: rgba(99, 102, 241, 0.08);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
+        }
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            opacity: 0.8;
+        }
+        .file-info {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: var(--success-color);
+            font-weight: 600;
+            display: none;
+        }
+        .alert-box {
+            padding: 1rem;
+            border-radius: 14px;
+            margin-bottom: 1.5rem;
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+            animation: fadeIn 0.4s ease;
+        }
+        .alert-box.success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+        .alert-box.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+        .pw-search-container {
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        .pw-search-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            font-family: 'Cairo', sans-serif;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all var(--transition-speed);
+        }
+        .pw-search-input:focus {
+            border-color: var(--input-focus-border);
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+        }
+        .pw-table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 14px;
+            border: 1px solid var(--card-border);
+        }
+        .pw-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--text-primary);
+            padding: 0.4rem 0.8rem;
+            font-family: 'Outfit', 'Cairo', sans-serif;
+            font-size: 0.95rem;
+            width: 100%;
+            transition: border var(--transition-speed);
+        }
+        .pw-input:focus {
+            border-color: var(--input-focus-border);
+            outline: none;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .admin-action-btn {
+            background: linear-gradient(135deg, var(--accent-color) 0%, #4f46e5 100%);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 14px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'Cairo', sans-serif;
+            transition: all var(--transition-speed);
+            box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.3);
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .admin-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px 0 var(--accent-glow);
+        }
+        .admin-action-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .delete-dept-btn {
+            background: transparent;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 8px;
+            transition: all var(--transition-speed);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .delete-dept-btn:hover {
+            background: rgba(239, 68, 68, 0.12);
+            color: #f87171;
+            transform: scale(1.05);
+        }
+        .deleted-dept-badge {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            padding: 0.4rem 0.8rem;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            animation: fadeIn 0.3s ease;
+        }
+        .restore-dept-btn {
+            background: transparent;
+            border: none;
+            color: var(--accent-color);
+            cursor: pointer;
+            padding: 0;
+            font-size: 0.95rem;
+            transition: transform 0.2s;
+            display: inline-flex;
+            align-items: center;
+        }
+        .restore-dept-btn:hover {
+            transform: rotate(-30deg) scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Background visual decor elements -->
+    <div class="bg-decor"></div>
+    <div class="bg-decor-2"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <header style="position: relative;">
+            <div class="admin-header-actions">
+                <a href="index.html" class="back-btn"><i class="fas fa-home"></i> العودة للرئيسية</a>
+                <a href="#" onclick="handleLogout(event)" class="logout-btn-header" style="position: static;" title="تسجيل الخروج"><i class="fas fa-sign-out-alt"></i> خروج</a>
+            </div>
+            
+            <div class="logo-container">
+                <i class="fas fa-user-cog logo-icon"></i>
+            </div>
+            <h1>لوحة التحكم وإدارة النظام</h1>
+            <p>قم بتحديث ملف البيانات الرئيسي أو إدارة وتغيير كلمات مرور الإدارات التشغيلية</p>
+        </header>
+
+        <!-- Message Alerts -->
+        <div id="alertBox" class="alert-box"></div>
+
+        <!-- Admin Panels Grid -->
+        <div class="admin-grid">
+            
+            <!-- Left column containing upload and mongodb config -->
+            <div style="display: flex; flex-direction: column; gap: 2rem;">
+                <!-- Left panel: Upload Data -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title"><i class="fas fa-file-upload"></i> تحديث ملف الاكسيل (Data.xlsx)</h2>
+                    </div>
+                    
+                    <form id="uploadForm" onsubmit="handleUpload(event)">
+                        <div id="dropZone" class="upload-area" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <h3>اسحب ملف الاكسيل المحدث هنا</h3>
+                            <p>أو اضغط للتصفح من جهازك (Data.xlsx)</p>
+                            <input type="file" id="fileInput" name="file" accept=".xlsx, .xls" style="display: none;" onchange="handleFileSelect(event)">
+                            <div id="fileInfo" class="file-info"></div>
+                        </div>
+                        
+                        <button type="submit" id="uploadBtn" class="admin-action-btn" disabled>
+                            <i class="fas fa-sync-alt"></i> تحديث قاعدة البيانات
+                        </button>
+                    </form>
+                </div>
+
+                <!-- MongoDB Config Panel -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title"><i class="fas fa-database"></i> إعدادات اتصال قاعدة البيانات (MongoDB)</h2>
+                    </div>
+                    
+                    <form id="mongoForm" onsubmit="saveMongoConfig(event)">
+                        <div class="input-group" style="margin-bottom: 1.2rem;">
+                            <label for="mongoUri" style="display: block; margin-bottom: 0.5rem; font-weight: 600;"><i class="fas fa-link"></i> رابط الاتصال (Connection URI):</label>
+                            <input type="text" id="mongoUri" class="pw-input" placeholder="mongodb://localhost:27017/ أو mongodb+srv://..." required style="direction: ltr; text-align: left; font-family: monospace; font-size: 0.9rem;">
+                        </div>
+                        
+                        <button type="submit" id="saveMongoBtn" class="admin-action-btn">
+                            <i class="fas fa-save"></i> حفظ واختبار الاتصال
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right panel: Passwords Management -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title"><i class="fas fa-shield-alt"></i> إدارة كلمات مرور المناطق</h2>
+                    <span id="deptCount" class="badge">0 إدارة</span>
+                </div>
+                
+                <div class="pw-search-container">
+                    <i class="fas fa-search" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); opacity: 0.5;"></i>
+                    <input type="text" id="pwSearch" class="pw-search-input" placeholder="ابحث عن إدارة تشغيلية..." oninput="filterPasswordsTable()">
+                </div>
+
+                <div class="pw-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>الإدارة التشغيلية</th>
+                                <th>كلمة المرور</th>
+                                <th style="width: 80px; text-align: center;">إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="passwordsTableBody">
+                            <!-- Populated dynamically by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Section for holding temporarily deleted departments -->
+                <div id="deletedDeptsSection" style="margin-top: 1.5rem; display: none; border-top: 1px solid var(--card-border); padding-top: 1.2rem;">
+                    <h4 style="font-size: 0.95rem; margin-bottom: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-history"></i> الحسابات المحذوفة:</h4>
+                    <div id="deletedDeptsList" style="display: flex; flex-wrap: wrap; gap: 0.75rem;"></div>
+                </div>
+                
+                <div style="margin-top: 1.5rem;">
+                    <button id="savePasswordsBtn" class="admin-action-btn" onclick="savePasswords()">
+                        <i class="fas fa-save"></i> حفظ كلمات المرور
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Spinner -->
+    <div id="spinner" class="spinner"></div>
+
+    <script>
+        const spinner = document.getElementById('spinner');
+        const alertBox = document.getElementById('alertBox');
+        let allPasswords = {};
+
+        // Logout
+        function handleLogout(event) {
+            event.preventDefault();
+            localStorage.removeItem('logged_in');
+            localStorage.removeItem('user_department');
+            window.location.href = 'login.html';
+        }
+
+        // Display Alerts
+        function showAlert(message, type = 'success') {
+            alertBox.innerText = message;
+            alertBox.className = `alert-box ${type}`;
+            alertBox.style.display = 'flex';
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 5000);
+        }
+
+        // Drag & Drop event bindings
+        const dropZone = document.getElementById('dropZone');
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            }, false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+            }, false);
+        });
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length) {
+                document.getElementById('fileInput').files = files;
+                updateFileInfo(files[0]);
+            }
+        });
+
+        // File Selection
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            if (files.length) {
+                updateFileInfo(files[0]);
+            }
+        }
+
+        function updateFileInfo(file) {
+            const fileInfo = document.getElementById('fileInfo');
+            const uploadBtn = document.getElementById('uploadBtn');
+            fileInfo.innerText = `الملف المختار: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+            fileInfo.style.display = 'block';
+            uploadBtn.removeAttribute('disabled');
+        }
+
+        // Fetch passwords list
+        const loadPasswords = () => {
+            spinner.style.display = 'block';
+            fetch('/api/admin/passwords')
+                .then(res => {
+                    if (!res.ok) throw new Error('فشل تحميل حسابات الفروع');
+                    return res.json();
+                })
+                .then(data => {
+                    allPasswords = data;
+                    renderPasswordsTable(data);
+                    spinner.style.display = 'none';
+                })
+                .catch(err => {
+                    console.error(err);
+                    showAlert('حدث خطأ في تحميل حسابات الفروع.', 'error');
+                    spinner.style.display = 'none';
+                });
+        };
+        loadPasswords();
+
+        // Render passwords list table
+        function renderPasswordsTable(passwords) {
+            const tbody = document.getElementById('passwordsTableBody');
+            const deptCount = document.getElementById('deptCount');
+            tbody.innerHTML = '';
+            
+            const keys = Object.keys(passwords).filter(k => !k.startsWith('_')).sort();
+            const activeDeptsCount = keys.filter(k => k !== 'admin').length;
+            deptCount.innerText = `${activeDeptsCount} إدارة`;
+            
+            keys.forEach(key => {
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-dept', key);
+                // Admin role has a highlighted color
+                const isSystemAdmin = key === 'admin';
+                tr.innerHTML = `
+                    <td class="text-bold" style="${isSystemAdmin ? 'color: var(--accent-color);' : ''}">
+                        ${isSystemAdmin ? '<i class="fas fa-user-shield"></i> مدير النظام (Admin)' : key}
+                    </td>
+                    <td>
+                        <input type="text" class="pw-input text-number" value="${passwords[key]}" oninput="updatePasswordInMemory('${key}', this.value)">
+                    </td>
+                    <td style="text-align: center;">
+                        ${isSystemAdmin ? '<span style="color: var(--text-muted); opacity: 0.5;">-</span>' : `
+                            <button class="delete-dept-btn" onclick="deleteDepartment('${key}')" title="حذف الإدارة">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        `}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Handle deleted departments section rendering
+            const deletedSection = document.getElementById('deletedDeptsSection');
+            const deletedList = document.getElementById('deletedDeptsList');
+            const deletedKeys = passwords['_deleted'] || [];
+
+            if (deletedKeys.length > 0) {
+                deletedSection.style.display = 'block';
+                deletedList.innerHTML = '';
+                deletedKeys.forEach(dept => {
+                    const badge = document.createElement('div');
+                    badge.className = 'deleted-dept-badge';
+                    badge.innerHTML = `
+                        <span class="text-bold">${dept}</span>
+                        <button class="restore-dept-btn" onclick="restoreDepartment('${dept}')" title="إعادة تفعيل">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                    `;
+                    deletedList.appendChild(badge);
+                });
+            } else {
+                deletedSection.style.display = 'none';
+            }
+        }
+
+        function deleteDepartment(key) {
+            if (confirm(`هل أنت متأكد من حذف إدارة "${key}"؟ لن تتمكن هذه الإدارة من تسجيل الدخول.`)) {
+                // Ensure _deleted array exists
+                if (!allPasswords['_deleted']) {
+                    allPasswords['_deleted'] = [];
+                }
+                
+                // Add to deleted if not present
+                if (!allPasswords['_deleted'].includes(key)) {
+                    allPasswords['_deleted'].push(key);
+                }
+                
+                // Remove from active passwords
+                delete allPasswords[key];
+                
+                // Re-render
+                renderPasswordsTable(allPasswords);
+            }
+        }
+
+        function restoreDepartment(key) {
+            // Remove from _deleted array
+            if (allPasswords['_deleted']) {
+                allPasswords['_deleted'] = allPasswords['_deleted'].filter(d => d !== key);
+            }
+            
+            // Re-add to active passwords with default password
+            allPasswords[key] = "123456";
+            
+            // Re-render
+            renderPasswordsTable(allPasswords);
+        }
+
+        function updatePasswordInMemory(key, value) {
+            allPasswords[key] = value.trim();
+        }
+
+        // Filter Passwords Table
+        function filterPasswordsTable() {
+            const query = document.getElementById('pwSearch').value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#passwordsTableBody tr');
+            
+            rows.forEach(row => {
+                const deptName = row.getAttribute('data-dept').toLowerCase();
+                if (deptName.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Save Passwords to backend
+        function savePasswords() {
+            spinner.style.display = 'block';
+            fetch('/api/admin/passwords', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(allPasswords)
+            })
+            .then(res => res.json())
+            .then(resData => {
+                spinner.style.display = 'none';
+                if (resData.success) {
+                    showAlert(resData.message, 'success');
+                } else {
+                    showAlert(resData.error || 'فشل في حفظ البيانات', 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showAlert('فشل الاتصال بالسيرفر لحفظ البيانات', 'error');
+                spinner.style.display = 'none';
+            });
+        }
+
+        // Handle File upload Form Submit
+        function handleUpload(event) {
+            event.preventDefault();
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files.length) return;
+            
+            spinner.style.display = 'block';
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            fetch('/api/admin/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(resData => {
+                spinner.style.display = 'none';
+                if (resData.success) {
+                    showAlert(resData.message, 'success');
+                    // Reset input
+                    document.getElementById('uploadForm').reset();
+                    document.getElementById('fileInfo').style.display = 'none';
+                    document.getElementById('uploadBtn').setAttribute('disabled', 'true');
+                    // Reload passwords list as some new departments might have been added
+                    loadPasswords();
+                } else {
+                    showAlert(resData.error || 'فشل في تحديث قاعدة البيانات', 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showAlert('فشل الاتصال بالسيرفر لرفع البيانات', 'error');
+                spinner.style.display = 'none';
+            });
+        }
+
+        // Fetch MongoDB Config
+        function loadMongoConfig() {
+            fetch('/api/admin/mongodb_config')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.mongodb_uri) {
+                        document.getElementById('mongoUri').value = data.mongodb_uri;
+                    }
+                })
+                .catch(err => {
+                    console.error("Error loading MongoDB configuration:", err);
+                });
+        }
+        loadMongoConfig();
+
+        // Save MongoDB Config
+        function saveMongoConfig(event) {
+            event.preventDefault();
+            const uriInput = document.getElementById('mongoUri').value.trim();
+            if (!uriInput) return;
+            
+            spinner.style.display = 'block';
+            
+            fetch('/api/admin/mongodb_config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ mongodb_uri: uriInput })
+            })
+            .then(res => res.json())
+            .then(resData => {
+                spinner.style.display = 'none';
+                if (resData.success) {
+                    showAlert(resData.message, 'success');
+                    // Reload passwords to load from MongoDB
+                    loadPasswords();
+                } else {
+                    showAlert(resData.error || 'فشل في حفظ إعدادات الاتصال', 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showAlert('فشل الاتصال بالسيرفر لحفظ واختبار قاعدة البيانات', 'error');
+                spinner.style.display = 'none';
+            });
+        }
+    </script>
+</body>
+</html>

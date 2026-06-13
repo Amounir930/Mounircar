@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - منظومة الاستعلام عن حركات صرف الوقود</title>
+    <!-- Font Awesome for premium icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom stylesheet -->
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body class="login-body">
+    <!-- Background visual decor elements -->
+    <div class="bg-decor"></div>
+    <div class="bg-decor-2"></div>
+
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo-container">
+                    <i class="fas fa-lock logo-icon"></i>
+                </div>
+                <h2>تسجيل الدخول</h2>
+                <p>يرجى إدخال البيانات المعتمدة للوصول للمنظومة</p>
+            </div>
+
+            <!-- Error message container -->
+            <div id="errorAlert" class="error-alert" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="errorMessage">اسم المستخدم أو كلمة المرور غير صحيحة!</span>
+            </div>
+
+            <form id="loginForm" class="login-form" onsubmit="handleLogin(event)">
+                <div class="input-group">
+                    <label for="userRole"><i class="fas fa-building"></i> الإدارة التشغيلية</label>
+                    <select id="userRole" required>
+                        <option value="">جاري تحميل الإدارات...</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="password"><i class="fas fa-key"></i> كلمة المرور</label>
+                    <input type="password" id="password" name="password" placeholder="أدخل كلمة المرور..." required>
+                </div>
+
+                <button type="submit" class="login-btn">دخول المنظومة</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Check if already logged in
+        if (localStorage.getItem('logged_in') === 'true') {
+            window.location.href = 'index.html';
+        }
+
+        let userPasswords = {};
+
+        // Load passwords on startup and populate select box
+        window.addEventListener('DOMContentLoaded', () => {
+            const userRoleSelect = document.getElementById('userRole');
+            
+            fetch('static/data/passwords.json')
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error('تعذر تحميل إعدادات الحسابات.');
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    userPasswords = data;
+                    
+                    // Clear select
+                    userRoleSelect.innerHTML = '';
+                    
+                    // Add default prompt
+                    const promptOpt = document.createElement('option');
+                    promptOpt.value = '';
+                    promptOpt.innerText = 'اختر الإدارة التشغيلية للوصول...';
+                    userRoleSelect.appendChild(promptOpt);
+                    
+                    // Add admin option first
+                    const adminOpt = document.createElement('option');
+                    adminOpt.value = 'admin';
+                    adminOpt.innerText = 'مدير النظام (Admin)';
+                    userRoleSelect.appendChild(adminOpt);
+                    
+                    // Add other departments sorted alphabetically (skipping private keys starting with '_')
+                    const depts = Object.keys(data).filter(k => k !== 'admin' && !k.startsWith('_')).sort();
+                    depts.forEach(dept => {
+                        const opt = document.createElement('option');
+                        opt.value = dept;
+                        opt.innerText = dept;
+                        userRoleSelect.appendChild(opt);
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    userRoleSelect.innerHTML = '<option value="">خطأ في تحميل الإدارات!</option>';
+                });
+        });
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const selectedRole = document.getElementById('userRole').value;
+            const passwordInput = document.getElementById('password').value;
+            const errorAlert = document.getElementById('errorAlert');
+
+            if (!selectedRole) {
+                return;
+            }
+
+            // Verify credentials
+            const correctPassword = userPasswords[selectedRole];
+            if (correctPassword && passwordInput === correctPassword) {
+                localStorage.setItem('logged_in', 'true');
+                localStorage.setItem('user_department', selectedRole);
+                window.location.href = 'index.html';
+            } else {
+                errorAlert.style.display = 'flex';
+                // Trigger animation reset
+                errorAlert.style.animation = 'none';
+                errorAlert.offsetHeight; /* trigger reflow */
+                errorAlert.style.animation = 'shake 0.5s ease-in-out';
+            }
+        }
+    </script>
+</body>
+</html>
