@@ -21,16 +21,10 @@
     <div class="bg-decor-2"></div>
 
     <div class="container">
-        <!-- Top Navigation -->
-        <div class="top-nav">
-            <div class="nav-actions-left">
-                <a href="#" onclick="handleLogout(event)" class="logout-btn-header" title="تسجيل الخروج"><i class="fas fa-sign-out-alt"></i> خروج</a>
-                <a href="admin.html" id="adminPanelBtn" class="back-btn" style="display: none;" title="لوحة التحكم للنظام"><i class="fas fa-user-cog"></i> لوحة التحكم</a>
-            </div>
-        </div>
-
         <!-- Header -->
-        <header>
+        <header style="position: relative;">
+            <a href="#" onclick="handleLogout(event)" class="logout-btn-header" title="تسجيل الخروج"><i class="fas fa-sign-out-alt"></i> خروج</a>
+            <a href="admin.html" id="adminPanelBtn" class="back-btn" style="position: absolute; top: 0; left: 80px; display: none; padding: 0.5rem 1.2rem; border-radius: 12px; font-size: 0.9rem; font-weight: 600; text-decoration: none; align-items: center; gap: 0.5rem; border: 1px solid var(--card-border); background: rgba(255, 255, 255, 0.08); color: var(--text-primary);" title="لوحة التحكم للنظام"><i class="fas fa-user-cog"></i> لوحة التحكم</a>
             <div class="logo-container">
                 <i class="fas fa-gas-pump logo-icon"></i>
             </div>
@@ -110,7 +104,7 @@
                         <h2 class="panel-title"><i class="fas fa-list-ul"></i> تفاصيل حركات الصرف</h2>
                         <span class="badge">سجل العمليات</span>
                     </div>
-                    <div class="table-wrapper desktop-only">
+                    <div class="table-wrapper">
                         <table>
                             <thead>
                                 <tr>
@@ -126,9 +120,6 @@
                                 <!-- Populated dynamically by JS -->
                             </tbody>
                         </table>
-                    </div>
-                    <div class="mobile-cards-list mobile-only" id="carDetailedMobileList">
-                        <!-- Populated dynamically by JS -->
                     </div>
                 </div>
 
@@ -163,7 +154,7 @@
                         <h2 class="panel-title"><i class="fas fa-list-ul"></i> سجل حركات الصرف بالمنطقة</h2>
                         <span class="badge">العمليات التفصيلية</span>
                     </div>
-                    <div class="table-wrapper desktop-only">
+                    <div class="table-wrapper">
                         <table>
                             <thead>
                                 <tr>
@@ -181,9 +172,6 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="mobile-cards-list mobile-only" id="regionDetailedMobileList">
-                        <!-- Populated dynamically by JS -->
-                    </div>
                 </div>
 
                 <!-- Panel 2: Aggregated totals by Vehicle -->
@@ -192,7 +180,7 @@
                         <h2 class="panel-title"><i class="fas fa-car-side"></i> إجمالي صرف السيارات بالمنطقة</h2>
                         <span class="badge">ملخص السيارات</span>
                     </div>
-                    <div class="table-wrapper desktop-only">
+                    <div class="table-wrapper">
                         <table>
                             <thead>
                                 <tr>
@@ -206,9 +194,6 @@
                                 <!-- Populated dynamically by JS -->
                             </tbody>
                         </table>
-                    </div>
-                    <div class="mobile-cards-list mobile-only" id="regionVehiclesMobileList">
-                        <!-- Populated dynamically by JS -->
                     </div>
                 </div>
             </div>
