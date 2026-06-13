@@ -5,6 +5,11 @@ import pandas as pd
 import pymongo
 
 def get_mongo_client():
+    # 1. Try system environment variables first (important for Vercel production)
+    if "MONGODB_URI" in os.environ:
+        uri = os.environ["MONGODB_URI"]
+        return pymongo.MongoClient(uri, serverSelectionTimeoutMS=5000), uri
+
     uri = "mongodb://localhost:27017/"
     
     # Try to load MONGODB_URI from .env first
@@ -70,12 +75,14 @@ def clean_plate(plate):
         return full
     return plate_str
 
-def main(excel_file=None):
+def main(excel_file=None, raise_on_error=False):
     if excel_file is None:
         excel_file = EXCEL_FILE
         
     if not os.path.exists(excel_file):
         print(f"Error: {excel_file} not found. Please put your Excel file in the directory.")
+        if raise_on_error:
+            raise FileNotFoundError(f"Error: {excel_file} not found.")
         return
 
     print(f"Reading {excel_file}...")
@@ -161,6 +168,8 @@ def main(excel_file=None):
             mongo_connected = True
         except Exception as me:
             print(f"Warning: Could not sync records to MongoDB: {me}")
+            if raise_on_error:
+                raise me
             
         # Passwords management
         passwords_file = os.path.join(OUTPUT_DIR, "passwords.json")

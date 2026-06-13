@@ -8,6 +8,11 @@ from flask import Flask, send_from_directory, redirect, url_for, request, jsonif
 app = Flask(__name__, static_folder='static')
 
 def get_mongo_client():
+    # 1. Try system environment variables first (important for Vercel production)
+    if "MONGODB_URI" in os.environ:
+        uri = os.environ["MONGODB_URI"]
+        return pymongo.MongoClient(uri, serverSelectionTimeoutMS=2000), uri
+
     uri = "mongodb://localhost:27017/"
     
     # Try to load MONGODB_URI from .env first
@@ -180,7 +185,7 @@ def handle_upload():
         import convert
         import importlib
         importlib.reload(convert)
-        convert.main(excel_path)
+        convert.main(excel_path, raise_on_error=True)
         
         return jsonify({"success": True, "message": "تم رفع وتحديث ملف الاكسيل وقاعدة البيانات بنجاح!"})
     except Exception as e:
