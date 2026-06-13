@@ -54,22 +54,18 @@
             window.location.href = 'index.html';
         }
 
-        let userPasswords = {};
-
         // Load passwords on startup and populate select box
         window.addEventListener('DOMContentLoaded', () => {
             const userRoleSelect = document.getElementById('userRole');
             
-            fetch('static/data/passwords.json')
+            fetch('/api/departments')
                 .then(res => {
                     if (!res.ok) {
                         throw new Error('تعذر تحميل إعدادات الحسابات.');
                     }
                     return res.json();
                 })
-                .then(data => {
-                    userPasswords = data;
-                    
+                .then(depts => {
                     // Clear select
                     userRoleSelect.innerHTML = '';
                     
@@ -85,8 +81,7 @@
                     adminOpt.innerText = 'مدير النظام (Admin)';
                     userRoleSelect.appendChild(adminOpt);
                     
-                    // Add other departments sorted alphabetically (skipping private keys starting with '_')
-                    const depts = Object.keys(data).filter(k => k !== 'admin' && !k.startsWith('_')).sort();
+                    // Add other departments
                     depts.forEach(dept => {
                         const opt = document.createElement('option');
                         opt.value = dept;
@@ -110,19 +105,34 @@
                 return;
             }
 
-            // Verify credentials
-            const correctPassword = userPasswords[selectedRole];
-            if (correctPassword && passwordInput === correctPassword) {
-                localStorage.setItem('logged_in', 'true');
-                localStorage.setItem('user_department', selectedRole);
-                window.location.href = 'index.html';
-            } else {
+            // Secure server-side authentication check
+            fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ department: selectedRole, password: passwordInput })
+            })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('فشل تسجيل الدخول');
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    localStorage.setItem('logged_in', 'true');
+                    localStorage.setItem('user_department', data.department);
+                    window.location.href = 'index.html';
+                }
+            })
+            .catch(err => {
                 errorAlert.style.display = 'flex';
                 // Trigger animation reset
                 errorAlert.style.animation = 'none';
                 errorAlert.offsetHeight; /* trigger reflow */
                 errorAlert.style.animation = 'shake 0.5s ease-in-out';
-            }
+            });
         }
     </script>
 </body>

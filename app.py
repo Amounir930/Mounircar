@@ -263,6 +263,52 @@ def get_departments():
             pass
     return jsonify([])
 
+# API to securely verify user login credentials
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    try:
+        data = request.json
+        department = data.get("department", "").strip()
+        password = data.get("password", "").strip()
+        
+        if not department or not password:
+            return jsonify({"error": "يرجى إدخال اسم الإدارة وكلمة المرور"}), 400
+            
+        correct_password = None
+        
+        # 1. Try MongoDB
+        try:
+            client, _ = get_mongo_client()
+            db = client["fuel_db"]
+            credentials_col = db["credentials"]
+            doc = credentials_col.find_one({"_id": department})
+            if doc:
+                correct_password = doc.get("password")
+        except Exception as mongo_err:
+            print(f"Warning: MongoDB auth check failed: {mongo_err}")
+            
+        # 2. Try fallback to passwords.json
+        if not correct_password:
+            passwords_file = os.path.join('static', 'data', 'passwords.json')
+            if os.path.exists(passwords_file):
+                try:
+                    with open(passwords_file, 'r', encoding='utf-8') as f:
+                        passwords = json.load(f)
+                    correct_password = passwords.get(department)
+                except:
+                    pass
+                    
+        # 3. Hardcoded admin fallback
+        if not correct_password and department == "admin":
+            correct_password = "admin123"
+            
+        if correct_password and password == correct_password:
+            return jsonify({"success": True, "department": department})
+        else:
+            return jsonify({"error": "كلمة المرور غير صحيحة"}), 401
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # API for plate autocomplete search
 @app.route('/api/search/autocomplete')
 def autocomplete():
