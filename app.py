@@ -151,47 +151,7 @@ def handle_upload():
         return jsonify({"error": f"حدث خطأ أثناء التحويل أو المزامنة: {str(e)}"}), 500
 
 
-# ─── MongoDB Config API ──────────────────────────────────────────────────────
 
-@app.route('/api/admin/mongodb_config', methods=['GET', 'POST'])
-def handle_mongodb_config():
-    if request.method == 'GET':
-        # Return the URI that is actually in use (from env var or .env file)
-        uri = os.environ.get("MONGODB_URI", "")
-        if not uri:
-            env_path = ".env"
-            if os.path.exists(env_path):
-                try:
-                    with open(env_path, "r", encoding="utf-8") as f:
-                        for line in f:
-                            if line.strip().startswith("MONGODB_URI="):
-                                uri = line.strip().split("MONGODB_URI=", 1)[1].strip()
-                                break
-                except Exception:
-                    pass
-        return jsonify({"mongodb_uri": uri or "غير مُعيَّن — أضف MONGODB_URI في Vercel Environment Variables"})
-
-    elif request.method == 'POST':
-        try:
-            data = request.json
-            uri = data.get("mongodb_uri", "").strip()
-            if not uri:
-                return jsonify({"error": "يرجى إدخال رابط اتصال صالح"}), 400
-
-            # Test connection
-            test_client = pymongo.MongoClient(uri, serverSelectionTimeoutMS=5000)
-            test_client.server_info()
-
-            # Try to persist locally (only works locally, not on Vercel)
-            try:
-                with open(".env", 'w', encoding='utf-8') as f:
-                    f.write(f"MONGODB_URI={uri}\n")
-            except Exception:
-                pass
-
-            return jsonify({"success": True, "message": "الاتصال ناجح! تأكد من إضافة MONGODB_URI في Vercel Environment Variables."})
-        except Exception as e:
-            return jsonify({"error": f"فشل الاتصال: {str(e)}"}), 500
 
 
 # ─── Departments API ──────────────────────────────────────────────────────────

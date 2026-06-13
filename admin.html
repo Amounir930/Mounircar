@@ -270,23 +270,7 @@
                     </form>
                 </div>
 
-                <!-- MongoDB Config Panel -->
-                <div class="panel">
-                    <div class="panel-header">
-                        <h2 class="panel-title"><i class="fas fa-database"></i> إعدادات اتصال قاعدة البيانات (MongoDB)</h2>
-                    </div>
-                    
-                    <form id="mongoForm" onsubmit="saveMongoConfig(event)">
-                        <div class="input-group" style="margin-bottom: 1.2rem;">
-                            <label for="mongoUri" style="display: block; margin-bottom: 0.5rem; font-weight: 600;"><i class="fas fa-link"></i> رابط الاتصال (Connection URI):</label>
-                            <input type="text" id="mongoUri" class="pw-input" placeholder="mongodb://localhost:27017/ أو mongodb+srv://..." required style="direction: ltr; text-align: left; font-family: monospace; font-size: 0.9rem;">
-                        </div>
-                        
-                        <button type="submit" id="saveMongoBtn" class="admin-action-btn">
-                            <i class="fas fa-save"></i> حفظ واختبار الاتصال
-                        </button>
-                    </form>
-                </div>
+
             </div>
 
             <!-- Right panel: Passwords Management -->
@@ -591,53 +575,7 @@
             });
         }
 
-        // Fetch MongoDB Config
-        function loadMongoConfig() {
-            fetch('/api/admin/mongodb_config')
-                .then(res => res.json())
-                .then(data => {
-                    if (data.mongodb_uri) {
-                        document.getElementById('mongoUri').value = data.mongodb_uri;
-                    }
-                })
-                .catch(err => {
-                    console.error("Error loading MongoDB configuration:", err);
-                });
-        }
-        loadMongoConfig();
 
-        // Save MongoDB Config
-        function saveMongoConfig(event) {
-            event.preventDefault();
-            const uriInput = document.getElementById('mongoUri').value.trim();
-            if (!uriInput) return;
-            
-            spinner.style.display = 'block';
-            
-            fetch('/api/admin/mongodb_config', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ mongodb_uri: uriInput })
-            })
-            .then(res => res.json())
-            .then(resData => {
-                spinner.style.display = 'none';
-                if (resData.success) {
-                    showAlert(resData.message, 'success');
-                    // Reload passwords to load from MongoDB
-                    loadPasswords();
-                } else {
-                    showAlert(resData.error || 'فشل في حفظ إعدادات الاتصال', 'error');
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                showAlert('فشل الاتصال بالسيرفر لحفظ واختبار قاعدة البيانات', 'error');
-                spinner.style.display = 'none';
-            });
-        }
     </script>
 </body>
 </html>
