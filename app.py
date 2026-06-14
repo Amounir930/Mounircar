@@ -107,11 +107,9 @@ def handle_passwords():
             credentials_col = db["credentials"]
             settings_col    = db["settings"]
 
-            # Sync deletions (admin and general are never deleted)
-            mongo_keys = [doc["_id"] for doc in credentials_col.find()]
-            for k in mongo_keys:
-                if k not in new_passwords and k not in ('admin', 'general'):
-                    credentials_col.delete_one({"_id": k})
+            # We no longer delete documents from credentials collection so that blocked departments
+            # keep their historical queryability and can be restored easily.
+            # Only update the list of blocked departments in the settings collection.
 
             # Upsert all passwords
             for key, val in new_passwords.items():
@@ -169,7 +167,17 @@ def get_departments():
         db = get_db()
         credentials_col = db["credentials"]
         keys = [doc["_id"] for doc in credentials_col.find()]
-        depts = sorted([k for k in keys if k not in ('admin', 'general') and not k.startswith('_')])
+        
+        # Filter active-only if requested (e.g. for login page)
+        active_only = request.args.get('active_only', '').lower() == 'true'
+        if active_only:
+            settings_col = db["settings"]
+            blocked_doc = settings_col.find_one({"_id": "blocked_departments"})
+            blocked_depts = blocked_doc.get("list", []) if blocked_doc else []
+            depts = sorted([k for k in keys if k not in ('admin', 'general') and k not in blocked_depts and not k.startswith('_')])
+        else:
+            depts = sorted([k for k in keys if k not in ('admin', 'general') and not k.startswith('_')])
+            
         return jsonify(depts)
     except Exception as e:
         print(f"Error loading departments: {e}")
@@ -192,6 +200,17 @@ def api_login():
             return jsonify({"success": True, "department": department})
         if department == "general" and password == "general123":
             return jsonify({"success": True, "department": department})
+
+        # Check if department is blocked
+        try:
+            db = get_db()
+            settings_col = db["settings"]
+            blocked_doc = settings_col.find_one({"_id": "blocked_departments"})
+            blocked_depts = blocked_doc.get("list", []) if blocked_doc else []
+            if department in blocked_depts:
+                return jsonify({"error": "هذا الحساب موقوف حالياً"}), 403
+        except Exception as block_err:
+            print(f"Warning: Block check failed: {block_err}")
 
         # Check MongoDB
         try:

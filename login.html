@@ -58,7 +58,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             const userRoleSelect = document.getElementById('userRole');
             
-            fetch('/api/departments')
+            fetch('/api/departments?active_only=true')
                 .then(res => {
                     if (!res.ok) {
                         throw new Error('تعذر تحميل إعدادات الحسابات.');
