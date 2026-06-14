@@ -276,11 +276,7 @@
                     </table>
                 </div>
 
-                <!-- Section for holding temporarily blocked departments -->
-                <div id="deletedDeptsSection" style="margin-top: 1.5rem; display: none; border-top: 1px solid var(--card-border); padding-top: 1.2rem;">
-                    <h4 style="font-size: 0.95rem; margin-bottom: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-user-slash"></i> الحسابات الموقوفة:</h4>
-                    <div id="deletedDeptsList" style="display: flex; flex-wrap: wrap; gap: 0.75rem;"></div>
-                </div>
+
                 
                 <div style="margin-top: 1.5rem;">
                     <button id="savePasswordsBtn" class="admin-action-btn" onclick="savePasswords()">
@@ -387,88 +383,62 @@
             tbody.innerHTML = '';
             
             const deletedKeys = passwords['_deleted'] || [];
-            const keys = Object.keys(passwords).filter(k => !k.startsWith('_') && !deletedKeys.includes(k)).sort();
-            const activeDeptsCount = keys.filter(k => k !== 'admin' && k !== 'general').length;
+            const keys = Object.keys(passwords).filter(k => !k.startsWith('_')).sort();
+            const activeDeptsCount = keys.filter(k => k !== 'admin' && k !== 'general' && !deletedKeys.includes(k)).length;
             deptCount.innerText = `${activeDeptsCount} إدارة`;
             
             keys.forEach(key => {
                 const tr = document.createElement('tr');
                 tr.setAttribute('data-dept', key);
-                // System roles have highlighted colors and cannot be deleted
+                
                 const isSystemAdmin = key === 'admin';
                 const isGeneral = key === 'general';
+                const isBlocked = deletedKeys.includes(key);
+                
                 tr.innerHTML = `
-                    <td class="text-bold" style="${isSystemAdmin || isGeneral ? 'color: var(--accent-color);' : ''}">
+                    <td class="text-bold" style="${isSystemAdmin || isGeneral ? 'color: var(--accent-color);' : (isBlocked ? 'color: var(--text-secondary); opacity: 0.6;' : '')}">
                         ${isSystemAdmin ? '<i class="fas fa-user-shield"></i> مدير النظام (Admin)' : (isGeneral ? '<i class="fas fa-user"></i> مستخدم عام (General)' : key)}
+                        ${isBlocked ? ' <span style="font-size: 0.8rem; color: #ef4444; background: rgba(239, 68, 68, 0.1); padding: 0.15rem 0.5rem; border-radius: 6px; margin-right: 0.5rem;"><i class="fas fa-ban"></i> موقوف</span>' : ''}
                     </td>
                     <td>
-                        <input type="text" class="pw-input text-number" value="${passwords[key]}" oninput="updatePasswordInMemory('${key}', this.value)">
+                        <input type="text" class="pw-input text-number" value="${passwords[key]}" oninput="updatePasswordInMemory('${key}', this.value)" ${isBlocked ? 'style="opacity: 0.5;"' : ''}>
                     </td>
                     <td style="text-align: center;">
                         ${isSystemAdmin || isGeneral ? '<span style="color: var(--text-muted); opacity: 0.5;">-</span>' : `
-                            <button class="delete-dept-btn" onclick="deleteDepartment('${key}')" title="إيقاف الحساب" style="color: var(--amber-color);">
-                                <i class="fas fa-ban"></i>
-                            </button>
+                            ${isBlocked ? `
+                                <button class="delete-dept-btn" onclick="toggleBlockDepartment('${key}', false)" title="تفعيل الحساب" style="color: var(--success-color);">
+                                    <i class="fas fa-check-circle"></i>
+                                </button>
+                            ` : `
+                                <button class="delete-dept-btn" onclick="toggleBlockDepartment('${key}', true)" title="إيقاف الحساب" style="color: var(--amber-color);">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                            `}
                         `}
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
-
-            // Handle deleted departments section rendering
-            const deletedSection = document.getElementById('deletedDeptsSection');
-            const deletedList = document.getElementById('deletedDeptsList');
-
-            if (deletedKeys.length > 0) {
-                deletedSection.style.display = 'block';
-                deletedList.innerHTML = '';
-                deletedKeys.forEach(dept => {
-                    const badge = document.createElement('div');
-                    badge.className = 'deleted-dept-badge';
-                    badge.innerHTML = `
-                        <span class="text-bold">${dept}</span>
-                        <button class="restore-dept-btn" onclick="restoreDepartment('${dept}')" title="إعادة تفعيل">
-                            <i class="fas fa-undo"></i>
-                        </button>
-                    `;
-                    deletedList.appendChild(badge);
-                });
-            } else {
-                deletedSection.style.display = 'none';
-            }
         }
 
-        function deleteDepartment(key) {
-            if (confirm(`هل أنت متأكد من إيقاف حساب إدارة "${key}"؟ لن تتمكن هذه الإدارة من تسجيل الدخول، ولكن ستبقى بياناتها متاحة للاستعلام.`)) {
-                // Ensure _deleted array exists
+        function toggleBlockDepartment(key, shouldBlock) {
+            const actionText = shouldBlock ? 'إيقاف' : 'تفعيل';
+            const actionMsg = shouldBlock ? 'لن تتمكن هذه الإدارة من تسجيل الدخول، ولكن ستبقى بياناتها متاحة للاستعلام.' : 'ستتمكن هذه الإدارة من تسجيل الدخول بشكل طبيعي باستخدام كلمة المرور الحالية.';
+            if (confirm(`هل أنت متأكد من ${actionText} حساب إدارة "${key}"؟ ${actionMsg}`)) {
                 if (!allPasswords['_deleted']) {
                     allPasswords['_deleted'] = [];
                 }
                 
-                // Add to deleted if not present
-                if (!allPasswords['_deleted'].includes(key)) {
-                    allPasswords['_deleted'].push(key);
+                if (shouldBlock) {
+                    if (!allPasswords['_deleted'].includes(key)) {
+                        allPasswords['_deleted'].push(key);
+                    }
+                } else {
+                    allPasswords['_deleted'] = allPasswords['_deleted'].filter(d => d !== key);
                 }
                 
-                // Remove from active passwords
-                delete allPasswords[key];
-                
-                // Re-render
                 renderPasswordsTable(allPasswords);
             }
-        }
-
-        function restoreDepartment(key) {
-            // Remove from _deleted array
-            if (allPasswords['_deleted']) {
-                allPasswords['_deleted'] = allPasswords['_deleted'].filter(d => d !== key);
-            }
-            
-            // Re-add to active passwords with default password
-            allPasswords[key] = "123456";
-            
-            // Re-render
-            renderPasswordsTable(allPasswords);
         }
 
         function updatePasswordInMemory(key, value) {
