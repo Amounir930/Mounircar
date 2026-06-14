@@ -18,7 +18,7 @@
         <div class="login-card">
             <div class="login-header">
                 <div class="logo-container">
-                    <i class="fas fa-lock logo-icon"></i>
+                    <span class="logo-text">Mounir Omar</span>
                 </div>
                 <h2>تسجيل الدخول</h2>
                 <p>يرجى إدخال البيانات المعتمدة للوصول للمنظومة</p>
@@ -80,6 +80,12 @@
                     adminOpt.value = 'admin';
                     adminOpt.innerText = 'مدير النظام (Admin)';
                     userRoleSelect.appendChild(adminOpt);
+                    
+                    // Add general option
+                    const generalOpt = document.createElement('option');
+                    generalOpt.value = 'general';
+                    generalOpt.innerText = 'مستخدم عام (General)';
+                    userRoleSelect.appendChild(generalOpt);
                     
                     // Add other departments
                     depts.forEach(dept => {

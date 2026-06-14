@@ -80,11 +80,16 @@ def handle_passwords():
             passwords = {}
             for doc in credentials_col.find():
                 passwords[doc["_id"]] = doc["password"]
+            
+            # Ensure admin and general are present in the response
+            if "admin" not in passwords:
+                passwords["admin"] = "admin123"
+            if "general" not in passwords:
+                passwords["general"] = "general123"
+
             deleted_doc = settings_col.find_one({"_id": "blocked_departments"})
             if deleted_doc:
                 passwords["_deleted"] = deleted_doc.get("list", [])
-            if not passwords:
-                passwords = {"admin": "admin123"}
             return jsonify(passwords)
         except Exception as e:
             return jsonify({"error": str(e)}), 500
@@ -96,14 +101,16 @@ def handle_passwords():
                 return jsonify({"error": "Invalid data format"}), 400
             if 'admin' not in new_passwords:
                 new_passwords['admin'] = 'admin123'
+            if 'general' not in new_passwords:
+                new_passwords['general'] = 'general123'
 
             credentials_col = db["credentials"]
             settings_col    = db["settings"]
 
-            # Sync deletions
+            # Sync deletions (admin and general are never deleted)
             mongo_keys = [doc["_id"] for doc in credentials_col.find()]
             for k in mongo_keys:
-                if k not in new_passwords:
+                if k not in new_passwords and k not in ('admin', 'general'):
                     credentials_col.delete_one({"_id": k})
 
             # Upsert all passwords
@@ -162,7 +169,7 @@ def get_departments():
         db = get_db()
         credentials_col = db["credentials"]
         keys = [doc["_id"] for doc in credentials_col.find()]
-        depts = sorted([k for k in keys if k != 'admin' and not k.startswith('_')])
+        depts = sorted([k for k in keys if k not in ('admin', 'general') and not k.startswith('_')])
         return jsonify(depts)
     except Exception as e:
         print(f"Error loading departments: {e}")
@@ -180,8 +187,10 @@ def api_login():
         if not department or not password:
             return jsonify({"error": "يرجى إدخال اسم الإدارة وكلمة المرور"}), 400
 
-        # Admin hardcoded fallback
+        # Admin and General hardcoded fallbacks
         if department == "admin" and password == "admin123":
+            return jsonify({"success": True, "department": department})
+        if department == "general" and password == "general123":
             return jsonify({"success": True, "department": department})
 
         # Check MongoDB

@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const spinner = document.getElementById('spinner');
     const dashboardContent = document.getElementById('dashboardContent');
     const infoState = document.getElementById('infoState');
+    const mainTitle = document.getElementById('mainTitle');
     
     // Layout grids
     const carResultsGrid = document.getElementById('carResultsGrid');
@@ -244,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const userDept = localStorage.getItem('user_department');
                 // Startup routing depending on role
-                if (userDept && userDept !== 'admin') {
+                if (userDept && userDept !== 'admin' && userDept !== 'general') {
                     // Department Mode: Hide region select completely, show car search full width
                     regionSearchContainer.style.display = 'none';
                     carSearchContainer.style.display = 'flex';
@@ -279,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const revertToGeneralReport = () => {
         suggestionsList.style.display = 'none';
         const userDept = localStorage.getItem('user_department');
-        if (userDept && userDept !== 'admin') {
+        if (userDept && userDept !== 'admin' && userDept !== 'general') {
             currentMode = 'region';
             performRegionSearch(userDept);
         } else {
@@ -299,15 +300,17 @@ document.addEventListener('DOMContentLoaded', () => {
         infoState.classList.remove('error');
         
         const userDept = localStorage.getItem('user_department');
-        const isDept = userDept && userDept !== 'admin';
+        const isDept = userDept && userDept !== 'admin' && userDept !== 'general';
         
         if (isDept) {
+            if (mainTitle) mainTitle.innerText = `منظومة الاستعلام عن حركات صرف المركبات - ${userDept}`;
             infoState.innerHTML = `
                 <div class="info-icon"><i class="fas fa-search-dollar"></i></div>
                 <h3>بانتظار البحث...</h3>
                 <p>يرجى إدخال رقم لوحة السيارة للبحث عنها داخل إدارتكم.</p>
             `;
         } else {
+            if (mainTitle) mainTitle.innerText = 'منظومة الاستعلام عن حركات صرف المركبات';
             infoState.innerHTML = `
                 <div class="info-icon"><i class="fas fa-map-marked-alt"></i></div>
                 <h3>بانتظار اختيار المنطقة أو الاستعلام عن سيارة...</h3>
@@ -330,7 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
         debounceTimer = setTimeout(() => {
             const userDept = localStorage.getItem('user_department');
             let url = `/api/search/autocomplete?q=${encodeURIComponent(query)}`;
-            if (userDept && userDept !== 'admin') {
+            if (userDept && userDept !== 'admin' && userDept !== 'general') {
                 url += `&department=${encodeURIComponent(userDept)}`;
             }
             fetch(url)
@@ -428,7 +431,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const userDept = localStorage.getItem('user_department');
         let url = `/api/search/car?plate=${encodeURIComponent(plate)}`;
-        if (userDept && userDept !== 'admin') {
+        if (userDept && userDept !== 'admin' && userDept !== 'general') {
             url += `&department=${encodeURIComponent(userDept)}`;
         }
         fetch(url)
@@ -449,6 +452,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Configure KPI Headers for Car Mode
                 kpiDeptTitle.innerText = 'الإدارة التشغيلية الغالبة';
+
+                // Update main title
+                if (mainTitle) {
+                    const isDeptUser = userDept && userDept !== 'admin' && userDept !== 'general';
+                    const activeDept = isDeptUser ? userDept : dominantDept;
+                    mainTitle.innerText = `منظومة الاستعلام عن حركات صرف المركبات - ${activeDept}`;
+                }
 
                 // Populate KPIs
                 kpiQuantity.innerHTML = `${formatNumber(totalQuantity, 2)} <span class="kpi-unit">لتر</span>`;
@@ -519,6 +529,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Configure KPI Headers for Region Mode
                 kpiDeptTitle.innerText = 'عدد السيارات بالمنطقة';
+
+                // Update main title
+                if (mainTitle) {
+                    mainTitle.innerText = `منظومة الاستعلام عن حركات صرف المركبات - ${regionName}`;
+                }
 
                 // Populate KPIs
                 kpiQuantity.innerHTML = `${formatNumber(totalQuantity, 2)} <span class="kpi-unit">لتر</span>`;

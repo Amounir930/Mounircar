@@ -387,23 +387,24 @@
             tbody.innerHTML = '';
             
             const keys = Object.keys(passwords).filter(k => !k.startsWith('_')).sort();
-            const activeDeptsCount = keys.filter(k => k !== 'admin').length;
+            const activeDeptsCount = keys.filter(k => k !== 'admin' && k !== 'general').length;
             deptCount.innerText = `${activeDeptsCount} إدارة`;
             
             keys.forEach(key => {
                 const tr = document.createElement('tr');
                 tr.setAttribute('data-dept', key);
-                // Admin role has a highlighted color
+                // System roles have highlighted colors and cannot be deleted
                 const isSystemAdmin = key === 'admin';
+                const isGeneral = key === 'general';
                 tr.innerHTML = `
-                    <td class="text-bold" style="${isSystemAdmin ? 'color: var(--accent-color);' : ''}">
-                        ${isSystemAdmin ? '<i class="fas fa-user-shield"></i> مدير النظام (Admin)' : key}
+                    <td class="text-bold" style="${isSystemAdmin || isGeneral ? 'color: var(--accent-color);' : ''}">
+                        ${isSystemAdmin ? '<i class="fas fa-user-shield"></i> مدير النظام (Admin)' : (isGeneral ? '<i class="fas fa-user"></i> مستخدم عام (General)' : key)}
                     </td>
                     <td>
                         <input type="text" class="pw-input text-number" value="${passwords[key]}" oninput="updatePasswordInMemory('${key}', this.value)">
                     </td>
                     <td style="text-align: center;">
-                        ${isSystemAdmin ? '<span style="color: var(--text-muted); opacity: 0.5;">-</span>' : `
+                        ${isSystemAdmin || isGeneral ? '<span style="color: var(--text-muted); opacity: 0.5;">-</span>' : `
                             <button class="delete-dept-btn" onclick="deleteDepartment('${key}')" title="حذف الإدارة">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
