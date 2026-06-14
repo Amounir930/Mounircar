@@ -347,9 +347,24 @@ header p {
     gap: 2rem;
 }
 
+/* Reorder region panels on mobile: Summary of Vehicles first, then Detailed Transactions */
+#regionResultsGrid .panel:nth-child(1) {
+    order: 2;
+}
+#regionResultsGrid .panel:nth-child(2) {
+    order: 1;
+}
+
 @media (min-width: 1024px) {
     .results-grid {
         grid-template-columns: 2fr 1fr;
+    }
+    /* Reset order on desktop to default source order */
+    #regionResultsGrid .panel:nth-child(1) {
+        order: 0;
+    }
+    #regionResultsGrid .panel:nth-child(2) {
+        order: 0;
     }
 }
 
