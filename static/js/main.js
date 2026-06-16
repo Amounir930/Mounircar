@@ -136,18 +136,94 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // Helper to generate odometer cell HTML
+    const getOdometerCellHTML = (tx) => {
+        const userDept = localStorage.getItem('user_department');
+        const isEditable = (userDept === 'admin') || (userDept && userDept !== 'general' && tx.department === userDept);
+        
+        const odoVal = tx.odometer || "";
+        if (isEditable) {
+            return `
+                <div class="odo-edit-container">
+                    <input type="text" class="odo-input text-number" value="${odoVal}" placeholder="العداد..." data-movement="${tx.movement_number}">
+                    <button class="odo-save-btn" onclick="saveOdometer('${tx.movement_number}', this)" title="حفظ"><i class="fas fa-save"></i></button>
+                </div>
+            `;
+        } else {
+            return `<span class="text-number">${odoVal || '-'}</span>`;
+        }
+    };
+
+    // Save odometer handler
+    window.saveOdometer = (movementNumber, buttonEl) => {
+        const container = buttonEl.closest('.odo-edit-container');
+        const inputEl = container.querySelector('.odo-input');
+        const newOdometer = inputEl.value.trim();
+        
+        inputEl.disabled = true;
+        buttonEl.disabled = true;
+        const originalHTML = buttonEl.innerHTML;
+        buttonEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        const userDept = localStorage.getItem('user_department');
+        
+        fetch('/api/transaction/odometer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                movement_number: movementNumber,
+                odometer: newOdometer,
+                department: userDept
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            inputEl.disabled = false;
+            buttonEl.disabled = false;
+            buttonEl.innerHTML = originalHTML;
+            if (data.success) {
+                inputEl.style.borderColor = '#10b981'; // green border
+                setTimeout(() => {
+                    inputEl.style.borderColor = '';
+                }, 2000);
+                
+                // Update cached state
+                const txCar = currentCarTransactions.find(t => t.movement_number === movementNumber);
+                if (txCar) txCar.odometer = newOdometer;
+                
+                const txRegion = currentRegionTransactions.find(t => t.movement_number === movementNumber);
+                if (txRegion) txRegion.odometer = newOdometer;
+            } else {
+                alert(data.error || 'حدث خطأ أثناء حفظ قراءة العداد.');
+                inputEl.style.borderColor = '#ef4444';
+            }
+        })
+        .catch(err => {
+            inputEl.disabled = false;
+            buttonEl.disabled = false;
+            buttonEl.innerHTML = originalHTML;
+            console.error(err);
+            alert('حدث خطأ في الاتصال بالخادم لحفظ قراءة العداد.');
+            inputEl.style.borderColor = '#ef4444';
+        });
+    };
+
     // Render Car Detailed Table
     const renderCarDetailedTable = (txs) => {
         detailedTableBody.innerHTML = '';
         txs.forEach(tx => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
+                <td class="text-number text-bold text-center" style="color: var(--accent-color);">${tx.seq || '-'}</td>
                 <td class="text-number text-bold">${tx.movement_number}</td>
                 <td class="text-number">${tx.date}</td>
                 <td class="text-number text-bold">${formatNumber(tx.quantity, 2)}</td>
                 <td class="text-number text-bold">${formatNumber(tx.value, 2)}</td>
                 <td>${tx.station}</td>
                 <td class="text-bold">${tx.description}</td>
+                <td>${getOdometerCellHTML(tx)}</td>
             `;
             detailedTableBody.appendChild(tr);
         });
@@ -160,6 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
         txs.forEach(tx => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
+                <td class="text-number text-bold text-center" style="color: var(--accent-color);">${tx.seq || '-'}</td>
                 <td class="text-number text-bold">${tx.movement_number}</td>
                 <td class="text-number">${tx.date}</td>
                 <td class="text-bold">${tx.plate}</td>
@@ -167,6 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="text-number text-bold">${formatNumber(tx.value, 2)}</td>
                 <td>${tx.station}</td>
                 <td class="text-bold">${tx.description}</td>
+                <td>${getOdometerCellHTML(tx)}</td>
             `;
             regionDetailedTableBody.appendChild(tr);
         });

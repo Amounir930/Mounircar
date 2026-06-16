@@ -246,7 +246,18 @@
                     </form>
                 </div>
 
-
+                <!-- Left panel: Download Updated Data -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title"><i class="fas fa-file-download"></i> تحميل ملف البيانات المحدث</h2>
+                    </div>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
+                        قم بتحميل ملف البيانات المحدث بصيغة Excel المحتوي على المسلسلات وقراءات العداد التي تم تسجيلها بواسطة الفروع.
+                    </p>
+                    <button onclick="handleDownload()" class="admin-action-btn" style="background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%); box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.3);">
+                        <i class="fas fa-file-excel"></i> تحميل الملف المحدث (Data_Updated.xlsx)
+                    </button>
+                </div>
             </div>
 
             <!-- Right panel: Passwords Management -->
@@ -520,6 +531,36 @@
                 showAlert('فشل الاتصال بالسيرفر لرفع البيانات', 'error');
                 spinner.style.display = 'none';
             });
+        }
+
+        // Download updated excel
+        function handleDownload() {
+            spinner.style.display = 'block';
+            fetch('/api/admin/download')
+                .then(res => {
+                    spinner.style.display = 'none';
+                    if (!res.ok) {
+                        return res.json().then(errData => {
+                            throw new Error(errData.error || 'فشل تحميل الملف');
+                        });
+                    }
+                    return res.blob();
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = "Data_Updated.xlsx";
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                    showAlert('تم تحميل ملف البيانات المحدث بنجاح.', 'success');
+                })
+                .catch(err => {
+                    console.error(err);
+                    showAlert(err.message || 'فشل الاتصال بالسيرفر لتحميل الملف.', 'error');
+                });
         }
 
 

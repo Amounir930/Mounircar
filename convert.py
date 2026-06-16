@@ -72,16 +72,54 @@ def main(excel_file=None, raise_on_error=False):
             raise FileNotFoundError(msg)
         return
 
+    # ── Fetch existing odometers from MongoDB before any processing ──
+    existing_odometers = {}
+    try:
+        client, mongo_uri = get_mongo_client()
+        db = client["fuel_db"]
+        transactions_col = db["transactions"]
+        # Retrieve all transactions with non-empty odometer
+        for doc in transactions_col.find({"odometer": {"$exists": True, "$ne": ""}}, {"movement_number": 1, "odometer": 1}):
+            m_num = doc.get("movement_number")
+            odo = doc.get("odometer")
+            if m_num and odo:
+                existing_odometers[str(m_num).strip()] = odo
+        print(f"Loaded {len(existing_odometers)} existing odometer readings from MongoDB.")
+    except Exception as e:
+        print(f"Warning: Could not fetch existing odometer readings: {e}")
+
     print(f"Reading {excel_file}...")
     try:
         df = pd.read_excel(excel_file)
 
-        # Clean columns
+        # Detect serial number column
+        serial_col = None
+        for col in df.columns:
+            col_cleaned = str(col).strip()
+            if col_cleaned == 'م' or col_cleaned == 'مسلسل' or col_cleaned == 'التسلسل':
+                serial_col = col
+                break
+
+        # Detect odometer column
+        odometer_col = None
+        for col in df.columns:
+            col_cleaned = str(col).strip()
+            if col_cleaned == 'قراءة العداد' or col_cleaned == 'العداد' or col_cleaned == 'قراءه العداد':
+                odometer_col = col
+                break
+
+        # Clean required columns
+        required_cols = ['رقم السيارة', 'الادارة التشغيل', 'اسم المحطة', 'الوصف', 'رقم حركة الصرف', 'كمية الصرف', 'قيمة الصرف جم', 'تاريخ حركة الصرف']
+        for col in required_cols:
+            if col not in df.columns:
+                # Try fallback names or raise error
+                raise KeyError(f"العمود المطلوب غير موجود في ملف الإكسيل: {col}")
+
         df['رقم السيارة']       = df['رقم السيارة'].astype(str).str.strip()
         df['الادارة التشغيل']   = df['الادارة التشغيل'].astype(str).str.strip()
         df['اسم المحطة']        = df['اسم المحطة'].astype(str).str.strip()
         df['الوصف']             = df['الوصف'].astype(str).str.strip()
-        df['الماركة']           = df['الماركة'].fillna('').astype(str).str.strip()
+        df['الماركة']           = df['الماركة'].fillna('').astype(str).str.strip() if 'الماركة' in df.columns else ''
         df['رقم حركة الصرف']   = (df['رقم حركة الصرف'].fillna('').astype(str).str.strip()
                                     .apply(lambda x: x[:-2] if x.endswith('.0') else x))
         df['كمية الصرف']        = pd.to_numeric(df['كمية الصرف'], errors='coerce').fillna(0.0)
@@ -90,7 +128,7 @@ def main(excel_file=None, raise_on_error=False):
 
         # Build records
         records = []
-        for _, row in df.iterrows():
+        for idx, row in df.iterrows():
             date_str = "غير محدد"
             if pd.notnull(row['تاريخ حركة الصرف']):
                 date_str = row['تاريخ حركة الصرف'].strftime('%Y-%m-%d %H:%M:%S')
@@ -99,17 +137,47 @@ def main(excel_file=None, raise_on_error=False):
             if not plate or plate == 'nan':
                 continue
 
+            m_num = row['رقم حركة الصرف']
+            m_num_str = str(m_num).strip()
+
+            # Handle sequence (م)
+            seq_val = None
+            if serial_col is not None:
+                val = row[serial_col]
+                if pd.notnull(val):
+                    try:
+                        seq_val = int(float(val))
+                    except:
+                        pass
+            if seq_val is None:
+                seq_val = len(records) + 1
+
+            # Handle odometer
+            odo_val = ""
+            if odometer_col is not None:
+                val = row[odometer_col]
+                if pd.notnull(val):
+                    odo_val = str(val).strip()
+                    if odo_val.endswith('.0'):
+                        odo_val = odo_val[:-2]
+
+            # Merge with existing odometer if blank in excel
+            if not odo_val and m_num_str in existing_odometers:
+                odo_val = existing_odometers[m_num_str]
+
             records.append({
+                'seq':             seq_val,
                 'plate':           plate,
-                'brand':           row['الماركة'],
+                'brand':           row['الماركة'] if 'الماركة' in df.columns else '',
                 'description':     row['الوصف'],
                 'product':         extract_product(row['الوصف']),
                 'date':            date_str,
-                'movement_number': row['رقم حركة الصرف'],
+                'movement_number': m_num_str,
                 'quantity':        float(row['كمية الصرف']),
                 'value':           float(row['قيمة الصرف جم']),
                 'department':      row['الادارة التشغيل'],
-                'station':         row['اسم المحطة']
+                'station':         row['اسم المحطة'],
+                'odometer':        odo_val
             })
 
         print(f"Converted {len(records)} records from Excel.")
@@ -126,6 +194,7 @@ def main(excel_file=None, raise_on_error=False):
                 transactions_col.insert_many(records)
             transactions_col.create_index("plate")
             transactions_col.create_index("department")
+            transactions_col.create_index("movement_number", unique=True)
             print(f"Imported {len(records)} records into MongoDB at {mongo_uri}")
 
             # Sync passwords: add new departments only

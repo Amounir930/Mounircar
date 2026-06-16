@@ -3,7 +3,9 @@ import re
 import json
 import tempfile
 import pymongo
-from flask import Flask, send_from_directory, redirect, url_for, request, jsonify
+import io
+import pandas as pd
+from flask import Flask, send_from_directory, redirect, url_for, request, jsonify, send_file
 
 # Initialize Flask
 app = Flask(__name__, static_folder='static')
@@ -337,6 +339,152 @@ def search_region():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ─── Odometer & Download API ──────────────────────────────────────────────────
+
+@app.route('/api/transaction/odometer', methods=['POST'])
+def update_odometer():
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "يرجى إرسال البيانات المطلوبة"}), 400
+
+        movement_number = data.get("movement_number", "").strip()
+        odometer        = str(data.get("odometer", "")).strip()
+        user_dept       = data.get("department", "").strip()
+
+        if not movement_number:
+            return jsonify({"error": "يرجى تحديد رقم الحركة"}), 400
+
+        db = get_db()
+        transactions_col = db["transactions"]
+
+        # Verify transaction exists
+        tx = transactions_col.find_one({"movement_number": movement_number})
+        if not tx:
+            return jsonify({"error": "الحركة غير موجودة"}), 404
+
+        # Authorization: if department user is logged in, they can only edit their own department's movements
+        if user_dept and user_dept not in ('admin', 'general'):
+            if tx.get("department") != user_dept:
+                return jsonify({"error": "غير مصرح لك بتعديل قراءة عداد هذه الحركة التابعة لإدارة أخرى"}), 403
+
+        # Update MongoDB
+        transactions_col.update_one(
+            {"movement_number": movement_number},
+            {"$set": {"odometer": odometer}}
+        )
+
+        # Try updating the local Excel file in the background if it exists on disk
+        try:
+            local_path = "Data.xlsx"
+            if os.path.exists(local_path):
+                # We can read, update the specific row, and write it back.
+                # However, since this is a quick action, it's safer to do this or log warning if it fails.
+                df_disk = pd.read_excel(local_path)
+                # Ensure the plate and odometer columns exist
+                # If 'قراءة العداد' is not in columns, add it
+                odo_col_name = 'قراءة العداد'
+                for col in df_disk.columns:
+                    if str(col).strip() == 'قراءة العداد':
+                        odo_col_name = col
+                        break
+                if odo_col_name not in df_disk.columns:
+                    df_disk[odo_col_name] = ""
+
+                # Cast column to str
+                df_disk[odo_col_name] = df_disk[odo_col_name].fillna("").astype(str)
+                df_disk['رقم حركة الصرف'] = df_disk['رقم حركة الصرف'].fillna("").astype(str).apply(lambda x: x[:-2] if x.endswith('.0') else x)
+
+                # Update row
+                df_disk.loc[df_disk['رقم حركة الصرف'] == movement_number, odo_col_name] = odometer
+
+                df_disk.to_excel(local_path, index=False)
+                print(f"Successfully updated odometer for movement {movement_number} in local Data.xlsx.")
+        except Exception as local_err:
+            print(f"Warning: Could not update local Data.xlsx in place: {local_err}")
+
+        return jsonify({"success": True, "message": "تم حفظ قراءة العداد بنجاح."})
+    except Exception as e:
+        return jsonify({"error": f"حدث خطأ أثناء التحديث: {str(e)}"}), 500
+
+
+@app.route('/api/admin/download')
+def download_updated_excel():
+    try:
+        db = get_db()
+        transactions_col = db["transactions"]
+
+        # Retrieve all transactions sorted by sequence number (seq)
+        txs = list(transactions_col.find().sort("seq", 1))
+
+        if not txs:
+            return jsonify({"error": "لا توجد بيانات لتصديرها"}), 404
+
+        # Build pandas DataFrame with exact original column order and names
+        columns_mapping = [
+            ('seq', 'م'),
+            ('plate', 'رقم السيارة'),
+            ('brand', 'الماركة'),
+            ('description', 'الوصف'),
+            ('date', 'تاريخ حركة الصرف'),
+            ('movement_number', 'رقم حركة الصرف'),
+            ('value', 'قيمة الصرف جم'),
+            ('quantity', 'كمية الصرف'),
+            ('department', 'الادارة التشغيل'),
+            ('station', 'اسم المحطة'),
+            ('odometer', 'قراءة العداد')
+        ]
+
+        data_list = []
+        for tx in txs:
+            row = {}
+            for eng_key, ara_key in columns_mapping:
+                val = tx.get(eng_key, "")
+                if eng_key == 'date':
+                    row[ara_key] = val
+                elif eng_key in ('quantity', 'value'):
+                    try:
+                        row[ara_key] = float(val)
+                    except:
+                        row[ara_key] = val
+                elif eng_key == 'seq':
+                    try:
+                        row[ara_key] = int(val)
+                    except:
+                        row[ara_key] = val
+                else:
+                    row[ara_key] = val
+            data_list.append(row)
+
+        df_out = pd.DataFrame(data_list)
+
+        # Create in-memory file
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df_out.to_excel(writer, index=False, sheet_name='Sheet1')
+        output.seek(0)
+
+        # Try to sync back to the local Data.xlsx so it stays on disk
+        try:
+            local_path = "Data.xlsx"
+            with open(local_path, "wb") as f:
+                f.write(output.getvalue())
+            print("Successfully synced memory state to local Data.xlsx.")
+        except Exception as disk_err:
+            print(f"Warning: Could not save Data.xlsx on disk: {disk_err}")
+
+        # Return file download
+        output.seek(0)
+        return send_file(
+            output,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            as_attachment=True,
+            download_name="Data_Updated.xlsx"
+        )
+    except Exception as e:
+        return jsonify({"error": f"حدث خطأ أثناء تصدير الملف: {str(e)}"}), 500
 
 
 # ─── Run ──────────────────────────────────────────────────────────────────────
