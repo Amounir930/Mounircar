@@ -230,14 +230,13 @@ document.addEventListener('DOMContentLoaded', () => {
         txs.forEach(tx => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td class="text-number text-bold text-center" style="color: var(--accent-color);">${tx.seq || '-'}</td>
+                <td>${getOdometerCellHTML(tx)}</td>
                 <td class="text-number text-bold">${tx.movement_number}</td>
                 <td class="text-number">${tx.date}</td>
                 <td class="text-number text-bold">${formatNumber(tx.quantity, 2)}</td>
                 <td class="text-number text-bold">${formatNumber(tx.value, 2)}</td>
                 <td>${tx.station}</td>
                 <td class="text-bold">${tx.description}</td>
-                <td>${getOdometerCellHTML(tx)}</td>
             `;
             detailedTableBody.appendChild(tr);
         });
@@ -250,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
         txs.forEach(tx => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td class="text-number text-bold text-center" style="color: var(--accent-color);">${tx.seq || '-'}</td>
+                <td>${getOdometerCellHTML(tx)}</td>
                 <td class="text-number text-bold">${tx.movement_number}</td>
                 <td class="text-number">${tx.date}</td>
                 <td class="text-bold">${tx.plate}</td>
@@ -258,7 +257,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="text-number text-bold">${formatNumber(tx.value, 2)}</td>
                 <td>${tx.station}</td>
                 <td class="text-bold">${tx.description}</td>
-                <td>${getOdometerCellHTML(tx)}</td>
             `;
             regionDetailedTableBody.appendChild(tr);
         });
