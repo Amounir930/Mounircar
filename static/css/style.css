@@ -347,11 +347,13 @@ header p {
     gap: 2rem;
 }
 
-/* Reorder region panels on mobile: Summary of Vehicles first, then Detailed Transactions */
-#regionResultsGrid .panel:nth-child(1) {
+/* Reorder region and car panels on mobile: Summary first, then Detailed Transactions */
+#regionResultsGrid .panel:nth-child(1),
+#carResultsGrid .panel:nth-child(1) {
     order: 2;
 }
-#regionResultsGrid .panel:nth-child(2) {
+#regionResultsGrid .panel:nth-child(2),
+#carResultsGrid .panel:nth-child(2) {
     order: 1;
 }
 
@@ -360,10 +362,12 @@ header p {
         grid-template-columns: 2fr 1fr;
     }
     /* Reset order on desktop to default source order */
-    #regionResultsGrid .panel:nth-child(1) {
+    #regionResultsGrid .panel:nth-child(1),
+    #carResultsGrid .panel:nth-child(1) {
         order: 0;
     }
-    #regionResultsGrid .panel:nth-child(2) {
+    #regionResultsGrid .panel:nth-child(2),
+    #carResultsGrid .panel:nth-child(2) {
         order: 0;
     }
 }
