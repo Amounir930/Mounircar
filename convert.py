@@ -194,7 +194,7 @@ def main(excel_file=None, raise_on_error=False):
                 transactions_col.insert_many(records)
             transactions_col.create_index("plate")
             transactions_col.create_index("department")
-            transactions_col.create_index("movement_number", unique=True)
+            transactions_col.create_index("movement_number")
             print(f"Imported {len(records)} records into MongoDB at {mongo_uri}")
 
             # Sync passwords: add new departments only

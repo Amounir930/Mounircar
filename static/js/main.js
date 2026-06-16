@@ -142,6 +142,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const isEditable = (userDept === 'admin') || (userDept && userDept !== 'general' && tx.department === userDept);
         
         const odoVal = tx.odometer || "";
+        
+        // Rule: If odometer is already recorded, it cannot be modified (read-only)
+        if (odoVal) {
+            return `<span class="text-number text-bold" style="color: #10b981;">${odoVal}</span>`; // green text
+        }
+        
         if (isEditable) {
             return `
                 <div class="odo-edit-container">
@@ -150,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
         } else {
-            return `<span class="text-number">${odoVal || '-'}</span>`;
+            return `<span class="text-number">-</span>`;
         }
     };
 
@@ -159,6 +165,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = buttonEl.closest('.odo-edit-container');
         const inputEl = container.querySelector('.odo-input');
         const newOdometer = inputEl.value.trim();
+        
+        if (!newOdometer) {
+            alert('يرجى إدخال قراءة العداد أولاً.');
+            return;
+        }
         
         inputEl.disabled = true;
         buttonEl.disabled = true;
@@ -180,22 +191,25 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then(res => res.json())
         .then(data => {
-            inputEl.disabled = false;
-            buttonEl.disabled = false;
-            buttonEl.innerHTML = originalHTML;
             if (data.success) {
-                inputEl.style.borderColor = '#10b981'; // green border
-                setTimeout(() => {
-                    inputEl.style.borderColor = '';
-                }, 2000);
-                
                 // Update cached state
                 const txCar = currentCarTransactions.find(t => t.movement_number === movementNumber);
                 if (txCar) txCar.odometer = newOdometer;
                 
                 const txRegion = currentRegionTransactions.find(t => t.movement_number === movementNumber);
                 if (txRegion) txRegion.odometer = newOdometer;
+                
+                // Re-render to enforce the read-only rule immediately
+                const isCarMode = (document.getElementById('carResultsGrid').style.display === 'grid');
+                if (isCarMode) {
+                    renderCarDetailedTable(currentCarTransactions);
+                } else {
+                    renderRegionDetailedTable(currentRegionTransactions);
+                }
             } else {
+                inputEl.disabled = false;
+                buttonEl.disabled = false;
+                buttonEl.innerHTML = originalHTML;
                 alert(data.error || 'حدث خطأ أثناء حفظ قراءة العداد.');
                 inputEl.style.borderColor = '#ef4444';
             }

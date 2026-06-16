@@ -365,6 +365,10 @@ def update_odometer():
         if not tx:
             return jsonify({"error": "الحركة غير موجودة"}), 404
 
+        # Rule: If odometer is already set, it cannot be modified
+        if tx.get("odometer"):
+            return jsonify({"error": "عذراً، تم تسجيل قراءة العداد مسبقاً ولا يمكن تعديلها."}), 400
+
         # Authorization: if department user is logged in, they can only edit their own department's movements
         if user_dept and user_dept not in ('admin', 'general'):
             if tx.get("department") != user_dept:
