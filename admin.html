@@ -388,6 +388,39 @@
         };
         loadPasswords();
 
+        // Helper to format date into Arabic name and 12-hour format if it's the old format
+        function formatDateArabic(dateStr) {
+            if (!dateStr) return '';
+            // If already in new format (contains Arabic letters), return as is
+            if (/[\u0600-\u06FF]/.test(dateStr)) {
+                return dateStr;
+            }
+            try {
+                // Parse standard YYYY-MM-DD HH:MM:SS by converting to ISO format
+                const parsableStr = dateStr.replace(' ', 'T');
+                const date = new Date(parsableStr);
+                if (isNaN(date.getTime())) return dateStr;
+                
+                const weekdays = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+                const weekday = weekdays[date.getDay()];
+                
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                const dd = String(date.getDate()).padStart(2, '0');
+                
+                let hours = date.getHours();
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                const seconds = String(date.getSeconds()).padStart(2, '0');
+                const period = hours >= 12 ? 'م' : 'ص';
+                hours = hours % 12 || 12;
+                const hh = String(hours).padStart(2, '0');
+                
+                return `${weekday} ${yyyy}-${mm}-${dd} ${hh}:${minutes}:${seconds} ${period}`;
+            } catch (e) {
+                return dateStr;
+            }
+        }
+
         // Render passwords list table
         function renderPasswordsTable(passwords) {
             const tbody = document.getElementById('passwordsTableBody');
@@ -407,7 +440,7 @@
                 const isSystemAdmin = key === 'admin';
                 const isGeneral = key === 'general';
                 const isBlocked = deletedKeys.includes(key);
-                const lastLoginVal = lastLogins[key] || '';
+                const lastLoginVal = formatDateArabic(lastLogins[key] || '');
                 const lastLoginHtml = lastLoginVal 
                     ? `<span class="text-number" style="font-size: 0.9rem; font-weight: 500; opacity: 0.95;">${lastLoginVal}</span>` 
                     : '<span style="color: var(--text-muted); opacity: 0.6; font-size: 0.9rem;">-</span>';
