@@ -276,9 +276,10 @@
                     <table>
                         <thead>
                             <tr>
-                                <th style="width: 45%;">الإدارة التشغيلية</th>
-                                <th style="width: 40%;">كلمة المرور</th>
+                                <th style="width: 35%;">الإدارة التشغيلية</th>
+                                <th style="width: 30%;">كلمة المرور</th>
                                 <th style="width: 15%; text-align: center;">إجراءات</th>
+                                <th style="width: 20%; text-align: center;">آخر تسجيل دخول</th>
                             </tr>
                         </thead>
                         <tbody id="passwordsTableBody">
@@ -394,6 +395,7 @@
             tbody.innerHTML = '';
             
             const deletedKeys = passwords['_deleted'] || [];
+            const lastLogins = passwords['_last_login'] || {};
             const keys = Object.keys(passwords).filter(k => !k.startsWith('_')).sort();
             const activeDeptsCount = keys.filter(k => k !== 'admin' && k !== 'general' && !deletedKeys.includes(k)).length;
             deptCount.innerText = `${activeDeptsCount} إدارة`;
@@ -405,6 +407,10 @@
                 const isSystemAdmin = key === 'admin';
                 const isGeneral = key === 'general';
                 const isBlocked = deletedKeys.includes(key);
+                const lastLoginVal = lastLogins[key] || '';
+                const lastLoginHtml = lastLoginVal 
+                    ? `<span class="text-number" style="font-size: 0.9rem; font-weight: 500; opacity: 0.95;">${lastLoginVal}</span>` 
+                    : '<span style="color: var(--text-muted); opacity: 0.6; font-size: 0.9rem;">-</span>';
                 
                 tr.innerHTML = `
                     <td class="text-bold" style="${isSystemAdmin || isGeneral ? 'color: var(--accent-color);' : (isBlocked ? 'color: var(--text-secondary); opacity: 0.6;' : '')}">
@@ -426,6 +432,9 @@
                                 </button>
                             `}
                         `}
+                    </td>
+                    <td style="text-align: center;">
+                        ${lastLoginHtml}
                     </td>
                 `;
                 tbody.appendChild(tr);

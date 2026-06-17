@@ -68,6 +68,53 @@ def logout():
 
 # ─── Passwords API ───────────────────────────────────────────────────────────
 
+def get_all_passwords(db):
+    """Retrieve all passwords, including fallbacks, and blocked/deleted list and last login dates."""
+    credentials_col = db["credentials"]
+    settings_col    = db["settings"]
+    passwords = {}
+    last_logins = {}
+    
+    for doc in credentials_col.find():
+        passwords[doc["_id"]] = doc.get("password") or ""
+        if "last_login" in doc:
+            last_logins[doc["_id"]] = doc["last_login"]
+            
+    if not passwords.get("admin"):
+        passwords["admin"] = "admin123"
+    if not passwords.get("general"):
+        passwords["general"] = "general123"
+
+    deleted_doc = settings_col.find_one({"_id": "blocked_departments"})
+    if deleted_doc:
+        passwords["_deleted"] = deleted_doc.get("list", [])
+        
+    passwords["_last_login"] = last_logins
+    return passwords
+
+
+def save_all_passwords(db, new_passwords):
+    """Save all passwords and update the blocked list."""
+    if 'admin' not in new_passwords:
+        new_passwords['admin'] = 'admin123'
+    if 'general' not in new_passwords:
+        new_passwords['general'] = 'general123'
+
+    credentials_col = db["credentials"]
+    settings_col    = db["settings"]
+
+    for key, val in new_passwords.items():
+        if not key.startswith('_'):
+            credentials_col.update_one({"_id": key}, {"$set": {"password": val}}, upsert=True)
+
+    deleted_list = new_passwords.get("_deleted", [])
+    settings_col.update_one(
+        {"_id": "blocked_departments"},
+        {"$set": {"list": deleted_list}},
+        upsert=True
+    )
+
+
 @app.route('/api/admin/passwords', methods=['GET', 'POST'])
 def handle_passwords():
     try:
@@ -77,22 +124,7 @@ def handle_passwords():
 
     if request.method == 'GET':
         try:
-            credentials_col = db["credentials"]
-            settings_col    = db["settings"]
-            passwords = {}
-            for doc in credentials_col.find():
-                passwords[doc["_id"]] = doc["password"]
-            
-            # Ensure admin and general are present in the response
-            if "admin" not in passwords:
-                passwords["admin"] = "admin123"
-            if "general" not in passwords:
-                passwords["general"] = "general123"
-
-            deleted_doc = settings_col.find_one({"_id": "blocked_departments"})
-            if deleted_doc:
-                passwords["_deleted"] = deleted_doc.get("list", [])
-            return jsonify(passwords)
+            return jsonify(get_all_passwords(db))
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
@@ -101,30 +133,7 @@ def handle_passwords():
             new_passwords = request.json
             if not isinstance(new_passwords, dict):
                 return jsonify({"error": "Invalid data format"}), 400
-            if 'admin' not in new_passwords:
-                new_passwords['admin'] = 'admin123'
-            if 'general' not in new_passwords:
-                new_passwords['general'] = 'general123'
-
-            credentials_col = db["credentials"]
-            settings_col    = db["settings"]
-
-            # We no longer delete documents from credentials collection so that blocked departments
-            # keep their historical queryability and can be restored easily.
-            # Only update the list of blocked departments in the settings collection.
-
-            # Upsert all passwords
-            for key, val in new_passwords.items():
-                if not key.startswith('_'):
-                    credentials_col.update_one({"_id": key}, {"$set": {"password": val}}, upsert=True)
-
-            # Store blocked list
-            deleted_list = new_passwords.get("_deleted", [])
-            settings_col.update_one(
-                {"_id": "blocked_departments"},
-                {"$set": {"list": deleted_list}},
-                upsert=True
-            )
+            save_all_passwords(db, new_passwords)
             return jsonify({"success": True, "message": "تم حفظ كلمات المرور بنجاح."})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
@@ -188,41 +197,80 @@ def get_departments():
 
 # ─── Login API ────────────────────────────────────────────────────────────────
 
+def is_department_blocked(db, department):
+    """Check if the department is in the blocked list."""
+    try:
+        settings_col = db["settings"]
+        blocked_doc = settings_col.find_one({"_id": "blocked_departments"})
+        if blocked_doc and department in blocked_doc.get("list", []):
+            return True
+    except Exception as e:
+        print(f"Warning: Block check failed: {e}")
+    return False
+
+
+def verify_credentials(db, department, password):
+    """Verify if the credentials are valid (checks fallback first, then MongoDB)."""
+    if department == "admin" and password == "admin123":
+        return True
+    if department == "general" and password == "general123":
+        return True
+        
+    try:
+        credentials_col = db["credentials"]
+        doc = credentials_col.find_one({"_id": department})
+        if doc and doc.get("password") == password:
+            return True
+    except Exception as e:
+        print(f"Warning: MongoDB credentials check failed: {e}")
+    return False
+
+
+def update_last_login_time(db, department):
+    """Updates the last login timestamp for the given department/user."""
+    try:
+        from datetime import datetime, timedelta, timezone
+        tz = timezone(timedelta(hours=3))
+        last_login_time = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
+        
+        credentials_col = db["credentials"]
+        update_query = {"$set": {"last_login": last_login_time}}
+        
+        if department == "admin":
+            update_query["$setOnInsert"] = {"password": "admin123"}
+        elif department == "general":
+            update_query["$setOnInsert"] = {"password": "general123"}
+            
+        credentials_col.update_one(
+            {"_id": department},
+            update_query,
+            upsert=True
+        )
+    except Exception as e:
+        print(f"Warning: Failed to update login timestamp for {department}: {e}")
+
+
 @app.route('/api/login', methods=['POST'])
 def api_login():
     try:
         data = request.json
-        department = data.get("department", "").strip()
-        password   = data.get("password", "").strip()
+        if not data or not isinstance(data, dict):
+            return jsonify({"error": "بيانات غير صالحة"}), 400
+            
+        department = str(data.get("department", "")).strip()
+        password   = str(data.get("password", "")).strip()
         if not department or not password:
             return jsonify({"error": "يرجى إدخال اسم الإدارة وكلمة المرور"}), 400
 
-        # Admin and General hardcoded fallbacks
-        if department == "admin" and password == "admin123":
-            return jsonify({"success": True, "department": department})
-        if department == "general" and password == "general123":
-            return jsonify({"success": True, "department": department})
-
+        db = get_db()
+        
         # Check if department is blocked
-        try:
-            db = get_db()
-            settings_col = db["settings"]
-            blocked_doc = settings_col.find_one({"_id": "blocked_departments"})
-            blocked_depts = blocked_doc.get("list", []) if blocked_doc else []
-            if department in blocked_depts:
-                return jsonify({"error": "هذا الحساب موقوف حالياً"}), 403
-        except Exception as block_err:
-            print(f"Warning: Block check failed: {block_err}")
+        if is_department_blocked(db, department):
+            return jsonify({"error": "هذا الحساب موقوف حالياً"}), 403
 
-        # Check MongoDB
-        try:
-            db = get_db()
-            credentials_col = db["credentials"]
-            doc = credentials_col.find_one({"_id": department})
-            if doc and doc.get("password") == password:
-                return jsonify({"success": True, "department": department})
-        except Exception as mongo_err:
-            print(f"Warning: MongoDB auth check failed: {mongo_err}")
+        if verify_credentials(db, department, password):
+            update_last_login_time(db, department)
+            return jsonify({"success": True, "department": department})
 
         return jsonify({"error": "كلمة المرور غير صحيحة"}), 401
     except Exception as e:
