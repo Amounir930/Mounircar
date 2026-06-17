@@ -226,12 +226,25 @@ def verify_credentials(db, department, password):
     return False
 
 
+def format_arabic_datetime(dt):
+    """Format datetime to include Arabic day name and 12-hour time format with ص/م."""
+    arabic_weekdays = {
+        0: "الإثنين", 1: "الثلاثاء", 2: "الأربعاء", 3: "الخميس",
+        4: "الجمعة", 5: "السبت", 6: "الأحد"
+    }
+    weekday = arabic_weekdays.get(dt.weekday(), "")
+    hour = dt.hour
+    period = "م" if hour >= 12 else "ص"
+    hour_12 = 12 if hour % 12 == 0 else hour % 12
+    return f"{weekday} {dt.strftime('%Y-%m-%d')} {hour_12:02d}:{dt.minute:02d}:{dt.second:02d} {period}"
+
+
 def update_last_login_time(db, department):
     """Updates the last login timestamp for the given department/user."""
     try:
         from datetime import datetime, timedelta, timezone
         tz = timezone(timedelta(hours=3))
-        last_login_time = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
+        last_login_time = format_arabic_datetime(datetime.now(tz))
         
         credentials_col = db["credentials"]
         update_query = {"$set": {"last_login": last_login_time}}
