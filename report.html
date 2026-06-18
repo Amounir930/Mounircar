@@ -519,27 +519,31 @@
 
             // Render detailed transactions if they exist
             if (transactions.length > 0) {
-                // Sort transactions by fuel type (description), plate, and date (ascending)
-                transactions.sort((a, b) => {
-                    // 1. Fuel Type (description)
-                    const descA = a.description || "";
-                    const descB = b.description || "";
-                    if (descA !== descB) {
-                        return descA.localeCompare(descB, 'ar');
-                    }
-                    
-                    // 2. Plate Number (plate)
-                    const plateA = a.plate || "";
-                    const plateB = b.plate || "";
-                    if (plateA !== plateB) {
-                        return plateA.localeCompare(plateB, 'ar');
-                    }
-                    
-                    // 3. Date (ascending - oldest first)
-                    const dateA = a.date || "";
-                    const dateB = b.date || "";
-                    return dateA.localeCompare(dateB);
-                });
+                if (mode === 'region') {
+                    // Sort transactions by plate (ascending, naturally) and then date (ascending)
+                    transactions.sort((a, b) => {
+                        const plateA = a.plate || "";
+                        const plateB = b.plate || "";
+                        if (plateA !== plateB) {
+                            return plateA.localeCompare(plateB, 'ar', { numeric: true });
+                        }
+                        const dateA = a.date || "";
+                        const dateB = b.date || "";
+                        return dateA.localeCompare(dateB);
+                    });
+                } else {
+                    // Sort transactions by fuel type (description) and then date (ascending)
+                    transactions.sort((a, b) => {
+                        const descA = a.description || "";
+                        const descB = b.description || "";
+                        if (descA !== descB) {
+                            return descA.localeCompare(descB, 'ar');
+                        }
+                        const dateA = a.date || "";
+                        const dateB = b.date || "";
+                        return dateA.localeCompare(dateB);
+                    });
+                }
 
                 const pagesWrapper = document.getElementById('pagesWrapper');
                 const chunkDiv = document.createElement('div');
@@ -598,6 +602,12 @@
 
             // Trigger window print after rendering
             setTimeout(() => {
+                // Close the window automatically after the print dialog is closed (printed or cancelled)
+                window.onafterprint = () => {
+                    setTimeout(() => {
+                        window.close();
+                    }, 300);
+                };
                 window.print();
             }, 600);
         });
