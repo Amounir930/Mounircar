@@ -586,7 +586,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     query: plate,
                     data: descriptionTotals,
                     total_quantity: totalQuantity,
-                    total_value: totalValue
+                    total_value: totalValue,
+                    transactions: txs
                 };
 
                 spinner.style.display = 'none';
@@ -671,7 +672,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     query: regionName,
                     data: vehiclesList,
                     total_quantity: totalQuantity,
-                    total_value: totalValue
+                    total_value: totalValue,
+                    transactions: txs
                 };
 
                 spinner.style.display = 'none';

@@ -191,17 +191,32 @@
             background-color: #f1f5f9 !important;
         }
 
-        /* Footer stamp */
-        .report-footer {
-            margin-top: 3rem;
-            border-top: 1px dashed var(--border-color);
-            padding-top: 1.5rem;
-            text-align: center;
-            font-size: 0.8rem;
-            color: var(--secondary-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        /* Page chunks styling for screen view */
+        .page-chunk {
+            margin-bottom: 2rem;
+            page-break-after: always;
+        }
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+        }
+        .details-table th {
+            background-color: #f8fafc;
+            color: var(--primary-color);
+            font-weight: 700;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid var(--border-color);
+            text-align: right;
+        }
+        .details-table td {
+            padding: 0.6rem 0.8rem;
+            border: 1px solid var(--border-color);
+            color: #334155;
+        }
+        .details-table tr:nth-child(even) td {
+            background-color: #fcfdfe;
         }
 
         /* Print Media Queries */
@@ -224,6 +239,18 @@
                 max-width: 100% !important;
             }
 
+            .page-chunk {
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                page-break-after: always !important;
+            }
+
+            .page-chunk:last-child {
+                page-break-after: avoid !important;
+            }
+
             .no-print {
                 display: none !important;
             }
@@ -240,41 +267,50 @@
             .total-row td {
                 background-color: #e2e8f0 !important;
             }
+
+            .details-table {
+                font-size: 7.5pt !important;
+            }
+
+            .details-table th, .details-table td {
+                padding: 1px 3px !important;
+                line-height: 1.1 !important;
+                border: 1px solid #94a3b8 !important;
+            }
         }
     </style>
 </head>
 <body>
+    <div id="pagesWrapper">
+        <div class="report-container page-chunk" id="mainPage">
+            <!-- Action bar (hidden in print) -->
+            <div class="actions-bar no-print">
+                <a href="javascript:window.close()" class="back-link">
+                    <i class="fas fa-arrow-right"></i> إغلاق الصفحة العودة للنظام
+                </a>
+                <button class="btn-print" onclick="window.print()">
+                    <i class="fas fa-print"></i> طباعة التقرير (PDF)
+                </button>
+            </div>
 
-    <div class="report-container">
-        <!-- Action bar (hidden in print) -->
-        <div class="actions-bar no-print">
-            <a href="javascript:window.close()" class="back-link">
-                <i class="fas fa-arrow-right"></i> إغلاق الصفحة العودة للنظام
-            </a>
-            <button class="btn-print" onclick="window.print()">
-                <i class="fas fa-print"></i> طباعة التقرير (PDF)
-            </button>
+            <!-- Document Header -->
+            <div class="doc-header">
+                <h1 class="doc-title" id="docTitle">قيمة و كمية الوقود المستهلك علي السيارات</h1>
+            </div>
+
+            <!-- Results Table Section -->
+            <div class="report-table-wrapper">
+                <h2 class="table-title" id="tableTitle"><i class="fas fa-list-ul"></i> ملخص حركة استهلاك الوقود</h2>
+                <table id="reportTable">
+                    <thead id="tableHead">
+                        <!-- Dynamic Headers -->
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Dynamic Rows -->
+                    </tbody>
+                </table>
+            </div>
         </div>
-
-        <!-- Document Header -->
-        <div class="doc-header">
-            <h1 class="doc-title" id="docTitle">قيمة و كمية الوقود المستهلك علي السيارات</h1>
-        </div>
-
-        <!-- Results Table Section -->
-        <div class="report-table-wrapper">
-            <h2 class="table-title" id="tableTitle"><i class="fas fa-list-ul"></i> ملخص حركة استهلاك الوقود</h2>
-            <table id="reportTable">
-                <thead id="tableHead">
-                    <!-- Dynamic Headers -->
-                </thead>
-                <tbody id="tableBody">
-                    <!-- Dynamic Rows -->
-                </tbody>
-            </table>
-        </div>
-
-
     </div>
 
     <script>
@@ -289,12 +325,13 @@
 
             const report = JSON.parse(rawData);
             const { mode, query, data, total_quantity, total_value } = report;
+            const transactions = report.transactions || [];
 
             // Set Document title & UI Title
             let finalTitle = "";
             if (mode === 'region') {
                 finalTitle = `قيمة و كمية الوقود المستهلك علي السيارات - ${query}`;
-                document.getElementById('tableTitle').innerHTML = '<i class="fas fa-car-side"></i> تفاصيل استهلاك السيارات بالمنطقة';
+                document.getElementById('tableTitle').innerHTML = '<i class="fas fa-car-side"></i> اجمالي استهلاك السيارات بالمنطقة';
             } else {
                 finalTitle = `قيمة و كمية الوقود المستهلك علي السيارة - ${query}`;
                 document.getElementById('tableTitle').innerHTML = '<i class="fas fa-gas-pump"></i> تفاصيل استهلاك السيارة من الوقود';
@@ -383,10 +420,79 @@
                 tBody.appendChild(trTotal);
             }
 
+            // Render detailed transactions if they exist
+            if (transactions.length > 0) {
+                // Sort transactions by date descending (same as dashboard view)
+                transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                // Chunk size: 60 rows per page
+                const chunkSize = 60;
+                const pagesCount = Math.ceil(transactions.length / chunkSize);
+                const pagesWrapper = document.getElementById('pagesWrapper');
+
+                for (let i = 0; i < pagesCount; i++) {
+                    const chunk = transactions.slice(i * chunkSize, (i + 1) * chunkSize);
+                    
+                    const chunkDiv = document.createElement('div');
+                    chunkDiv.className = 'report-container page-chunk';
+                    chunkDiv.style.marginTop = '2rem';
+                    
+                    let headersHtml = `
+                        <th>م</th>
+                        <th>قراءة العداد</th>
+                        <th>رقم الحركة</th>
+                        <th>تاريخ حركة الصرف</th>
+                        \${mode === 'region' ? '<th>رقم السيارة</th>' : ''}
+                        <th>كمية الصرف (لتر)</th>
+                        <th>قيمة الصرف (ج.م)</th>
+                        <th>اسم المحطة</th>
+                        <th>نوع الوقود المنصرف</th>
+                    `;
+
+                    let rowsHtml = '';
+                    chunk.forEach((tx, index) => {
+                        const serialNum = (i * chunkSize) + index + 1;
+                        rowsHtml += `
+                            <tr>
+                                <td class="text-number" style="text-align: center;">\${serialNum}</td>
+                                <td class="text-number" style="text-align: center;">\${tx.odometer || '-'}</td>
+                                <td class="text-number text-bold" style="text-align: center;">\${tx.movement_number}</td>
+                                <td class="text-number" style="text-align: center;">\${tx.date}</td>
+                                \${mode === 'region' ? `<td class="text-bold" style="text-align: center;">\${tx.plate}</td>` : ''}
+                                <td class="text-number text-bold">\${formatNumber(tx.quantity, 2)}</td>
+                                <td class="text-number text-bold">\${formatNumber(tx.value, 2)}</td>
+                                <td>\${tx.station}</td>
+                                <td class="text-bold">\${tx.description}</td>
+                            </tr>
+                        `;
+                    });
+
+                    chunkDiv.innerHTML = `
+                        <div class="doc-header" style="margin-bottom: 1.5rem;">
+                            <h2 class="doc-title" style="font-size: 1.3rem;">سجل تفاصيل الحركة - صفحة \${i + 1} من \${pagesCount}</h2>
+                            <p style="font-size: 0.85rem; color: var(--secondary-color); text-align: center; margin-top: 0.25rem;">
+                                تابع لتقرير: \${finalTitle}
+                            </p>
+                        </div>
+                        <div class="report-table-wrapper">
+                            <table class="details-table">
+                                <thead>
+                                    <tr>\${headersHtml}</tr>
+                                </thead>
+                                <tbody>
+                                    \${rowsHtml}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    pagesWrapper.appendChild(chunkDiv);
+                }
+            }
+
             // Trigger window print after rendering
             setTimeout(() => {
                 window.print();
-            }, 500);
+            }, 600);
         });
     </script>
 </body>
