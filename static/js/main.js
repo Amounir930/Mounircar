@@ -100,17 +100,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (key === 'quantity' || key === 'value') {
                 valA = parseFloat(valA) || 0;
                 valB = parseFloat(valB) || 0;
+                if (valA < valB) return direction === 'asc' ? -1 : 1;
+                if (valA > valB) return direction === 'asc' ? 1 : -1;
+                return 0;
             } else if (key === 'movement_number') {
                 valA = parseInt(valA) || 0;
                 valB = parseInt(valB) || 0;
+                if (valA < valB) return direction === 'asc' ? -1 : 1;
+                if (valA > valB) return direction === 'asc' ? 1 : -1;
+                return 0;
+            } else if (key === 'plate') {
+                const cmp = String(valA).localeCompare(String(valB), 'ar', { numeric: true });
+                if (cmp !== 0) return direction === 'asc' ? cmp : -cmp;
+                return (a.date || "").localeCompare(b.date || "");
             } else {
-                valA = String(valA).toLowerCase();
-                valB = String(valB).toLowerCase();
+                const cmp = String(valA).localeCompare(String(valB), 'ar');
+                return direction === 'asc' ? cmp : -cmp;
             }
-            
-            if (valA < valB) return direction === 'asc' ? -1 : 1;
-            if (valA > valB) return direction === 'asc' ? 1 : -1;
-            return 0;
         });
     };
 
@@ -557,11 +563,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 kpiTransactions.innerHTML = `${txs.length} <span class="kpi-unit">حركة</span>`;
                 kpiDept.innerText = dominantDept;
 
-                // Cache transactions and render using sorting
+                // Cache transactions and render using sorting (default: Date ascending)
                 currentCarTransactions = txs;
                 sortState.table = 'car';
                 sortState.key = 'date';
-                sortState.direction = 'desc';
+                sortState.direction = 'asc';
+                currentCarTransactions.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
                 renderCarDetailedTable(currentCarTransactions);
 
                 // Populate description table
@@ -642,11 +649,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 kpiTransactions.innerHTML = `${txs.length} <span class="kpi-unit">حركة</span>`;
                 kpiDept.innerHTML = `${vehiclesCount} <span class="kpi-unit">سيارة</span>`;
 
-                // Cache transactions and render using sorting
+                // Cache transactions and render using sorting (default: Plate ascending, then Date ascending)
                 currentRegionTransactions = txs;
                 sortState.table = 'region';
-                sortState.key = 'date';
-                sortState.direction = 'desc';
+                sortState.key = 'plate';
+                sortState.direction = 'asc';
+                currentRegionTransactions.sort((a, b) => {
+                    const plateA = a.plate || "";
+                    const plateB = b.plate || "";
+                    if (plateA !== plateB) {
+                        return plateA.localeCompare(plateB, 'ar', { numeric: true });
+                    }
+                    const dateA = a.date || "";
+                    const dateB = b.date || "";
+                    return dateA.localeCompare(dateB);
+                });
                 renderRegionDetailedTable(currentRegionTransactions);
 
                 // Populate Region Vehicles Table
