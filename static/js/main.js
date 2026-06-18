@@ -91,6 +91,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return 'tag-product';
     };
 
+    // Helper to extract numbers from plate string for sorting
+    const extractPlateNumber = (plateStr) => {
+        if (!plateStr) return 0;
+        const match = String(plateStr).match(/\d+/);
+        return match ? parseInt(match[0], 10) : 0;
+    };
+
     // Sort transactions array
     const sortTransactions = (txsArray, key, direction) => {
         txsArray.sort((a, b) => {
@@ -110,7 +117,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (valA > valB) return direction === 'asc' ? 1 : -1;
                 return 0;
             } else if (key === 'plate') {
-                const cmp = String(valA).localeCompare(String(valB), 'ar', { numeric: true });
+                const numA = extractPlateNumber(valA);
+                const numB = extractPlateNumber(valB);
+                if (numA !== numB) {
+                    return direction === 'asc' ? numA - numB : numB - numA;
+                }
+                const cmp = String(valA).localeCompare(String(valB), 'ar');
                 if (cmp !== 0) return direction === 'asc' ? cmp : -cmp;
                 return (a.date || "").localeCompare(b.date || "");
             } else {
@@ -658,7 +670,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const plateA = a.plate || "";
                     const plateB = b.plate || "";
                     if (plateA !== plateB) {
-                        return plateA.localeCompare(plateB, 'ar', { numeric: true });
+                        const numA = extractPlateNumber(plateA);
+                        const numB = extractPlateNumber(plateB);
+                        if (numA !== numB) {
+                            return numA - numB;
+                        }
+                        return plateA.localeCompare(plateB, 'ar');
                     }
                     const dateA = a.date || "";
                     const dateB = b.date || "";

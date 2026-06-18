@@ -519,7 +519,14 @@
 
             // Render detailed transactions if they exist
             if (transactions.length > 0) {
-                // Sort transactions by fuel type (description), plate, and date (ascending)
+                // Helper to extract numbers from plate string for sorting
+                const extractPlateNumber = (plateStr) => {
+                    if (!plateStr) return 0;
+                    const match = String(plateStr).match(/\d+/);
+                    return match ? parseInt(match[0], 10) : 0;
+                };
+
+                // Sort transactions by fuel type (description), plate (numeric), and date (ascending)
                 transactions.sort((a, b) => {
                     // 1. Fuel Type (description)
                     const descA = a.description || "";
@@ -532,6 +539,11 @@
                     const plateA = a.plate || "";
                     const plateB = b.plate || "";
                     if (plateA !== plateB) {
+                        const numA = extractPlateNumber(plateA);
+                        const numB = extractPlateNumber(plateB);
+                        if (numA !== numB) {
+                            return numA - numB;
+                        }
                         return plateA.localeCompare(plateB, 'ar');
                     }
                     
