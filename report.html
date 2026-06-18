@@ -219,11 +219,26 @@
             background-color: #fcfdfe;
         }
 
+        .signature-section {
+            margin-top: 3rem;
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 0 2rem;
+            direction: rtl;
+        }
+
         /* Print Media Queries */
         @media print {
             @page {
                 margin: 0;
                 size: A4 portrait;
+            }
+
+            .signature-section {
+                margin-top: 2rem !important;
+                page-break-inside: avoid !important;
             }
 
             body {
@@ -484,6 +499,16 @@
                         `;
                     });
 
+                    let signatureHtml = '';
+                    if (i === pagesCount - 1) {
+                        signatureHtml = `
+                            <div class="signature-section">
+                                <span>مسؤول التشغيل: ........................</span>
+                                <span>يعتمد: ........................</span>
+                            </div>
+                        `;
+                    }
+
                     chunkDiv.innerHTML = `
                         <div class="doc-header" style="margin-bottom: 1.5rem;">
                             <h2 class="doc-title" style="font-size: 1.3rem;">سجل تفاصيل الحركة - صفحة ${i + 1} من ${pagesCount}</h2>
@@ -501,9 +526,20 @@
                                 </tbody>
                             </table>
                         </div>
+                        ${signatureHtml}
                     `;
                     pagesWrapper.appendChild(chunkDiv);
                 }
+            } else {
+                // Append signature section to mainPage if no detailed transactions
+                const mainPage = document.getElementById('mainPage');
+                const sigDiv = document.createElement('div');
+                sigDiv.className = 'signature-section';
+                sigDiv.innerHTML = `
+                    <span>مسؤول التشغيل: ........................</span>
+                    <span>يعتمد: ........................</span>
+                `;
+                mainPage.appendChild(sigDiv);
             }
 
             // Trigger window print after rendering
