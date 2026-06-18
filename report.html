@@ -232,7 +232,7 @@
         /* Print Media Queries */
         @media print {
             @page {
-                margin: 1cm 0.6cm;
+                margin: 0;
                 size: A4 portrait;
             }
 
@@ -243,6 +243,7 @@
 
             body {
                 background-color: #ffffff !important;
+                margin: 1cm 0.6cm !important;
                 padding: 0 !important;
                 color: #000000 !important;
                 width: 100% !important;
@@ -576,13 +577,6 @@
                     `;
                 });
 
-                const signatureHtml = `
-                    <div class="signature-section">
-                        <span>مسؤول التشغيل: ........................</span>
-                        <span>يعتمد: ........................</span>
-                    </div>
-                `;
-
                 chunkDiv.innerHTML = `
                     <div class="doc-header" style="margin-bottom: 1.5rem;">
                         <h2 class="doc-title" style="font-size: 1.3rem;">سجل تفاصيل الحركة - ${mode === 'region' ? 'ادارة' : 'سيارة'} ${query} ${monthText ? `- ${monthText}` : ''}</h2>
@@ -597,7 +591,6 @@
                             </tbody>
                         </table>
                     </div>
-                    ${signatureHtml}
                 `;
                 pagesWrapper.appendChild(chunkDiv);
             }
