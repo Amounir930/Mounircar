@@ -207,13 +207,13 @@
         /* Print Media Queries */
         @media print {
             @page {
-                margin: 1.2cm 1.5cm;
+                margin: 0;
                 size: A4 portrait;
             }
 
             body {
                 background-color: #ffffff !important;
-                padding: 0 !important;
+                padding: 1.2cm 1.5cm !important;
                 color: #000000 !important;
             }
 
@@ -258,9 +258,6 @@
 
         <!-- Document Header -->
         <div class="doc-header">
-            <div class="logo-box">
-                <i class="fas fa-file-invoice-dollar"></i>
-            </div>
             <h1 class="doc-title" id="docTitle">قيمة و كمية الوقود المستهلك علي السيارات</h1>
         </div>
 
@@ -277,17 +274,11 @@
             </table>
         </div>
 
-        <!-- Footer -->
-        <div class="report-footer">
-            <span>منظومة إدارة حركات صرف الوقود الذكية</span>
-            <span id="pageUrl"></span>
-        </div>
+
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Load site url for reference
-            document.getElementById('pageUrl').innerText = window.location.host || "mounir.60sec.shop";
 
             // Load localStorage report data
             const rawData = localStorage.getItem('print_report_data');
