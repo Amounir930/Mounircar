@@ -843,8 +843,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const printArea = document.getElementById('printArea');
             if (printArea) {
                 printArea.innerHTML = generateReportMarkup(activePrintData);
-                window.print();
-                printArea.innerHTML = '';
+                
+                // Give the mobile browser 150ms to parse/layout/paint DOM before printing
+                setTimeout(() => {
+                    const clearPrint = () => {
+                        printArea.innerHTML = '';
+                        window.removeEventListener('afterprint', clearPrint);
+                    };
+                    window.addEventListener('afterprint', clearPrint);
+                    window.print();
+                }, 150);
             }
         });
     }
