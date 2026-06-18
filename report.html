@@ -243,7 +243,7 @@
 
             body {
                 background-color: #ffffff !important;
-                padding: 1cm 0.6cm !important;
+                padding: 0 0.6cm !important;
                 margin: 0 !important;
                 color: #000000 !important;
                 width: 100% !important;
@@ -259,7 +259,7 @@
             .report-container {
                 border: none !important;
                 box-shadow: none !important;
-                padding: 0 !important;
+                padding: 1cm 0 !important;
                 width: 100% !important;
                 max-width: 100% !important;
                 margin: 0 auto !important;
@@ -268,7 +268,7 @@
 
             .page-chunk {
                 margin: 0 auto !important;
-                padding: 0 !important;
+                padding: 1cm 0 !important;
                 box-sizing: border-box !important;
                 border: none !important;
                 box-shadow: none !important;
@@ -541,59 +541,66 @@
                     return dateA.localeCompare(dateB);
                 });
 
+                const chunkSize = 65;
+                const pagesCount = Math.ceil(transactions.length / chunkSize);
                 const pagesWrapper = document.getElementById('pagesWrapper');
-                const chunkDiv = document.createElement('div');
-                chunkDiv.className = 'report-container page-chunk';
-                chunkDiv.style.marginTop = '2rem';
-                
-                let headersHtml = `
-                    <tr>
-                        <th>م</th>
-                        <th>قراءة العداد</th>
-                        <th>رقم الحركة</th>
-                        <th>تاريخ حركة الصرف</th>
-                        ${mode === 'region' ? '<th>رقم السيارة</th>' : ''}
-                        <th>كمية الصرف (لتر)</th>
-                        <th>قيمة الصرف (ج.م)</th>
-                        <th>اسم المحطة</th>
-                        <th>نوع الوقود المنصرف</th>
-                    </tr>
-                `;
 
-                let rowsHtml = '';
-                transactions.forEach((tx, index) => {
-                    const serialNum = index + 1;
-                    rowsHtml += `
+                for (let i = 0; i < pagesCount; i++) {
+                    const chunk = transactions.slice(i * chunkSize, (i + 1) * chunkSize);
+                    
+                    const chunkDiv = document.createElement('div');
+                    chunkDiv.className = 'report-container page-chunk';
+                    chunkDiv.style.marginTop = '2rem';
+                    
+                    let headersHtml = `
                         <tr>
-                            <td class="text-number" style="text-align: center;">${serialNum}</td>
-                            <td class="text-number" style="text-align: center;">${tx.odometer || '-'}</td>
-                            <td class="text-number text-bold" style="text-align: center;">${tx.movement_number}</td>
-                            <td class="text-number" style="text-align: center;">${tx.date}</td>
-                            ${mode === 'region' ? `<td class="text-bold" style="text-align: center;">${tx.plate}</td>` : ''}
-                            <td class="text-number text-bold">${formatNumber(tx.quantity, 2)}</td>
-                            <td class="text-number text-bold">${formatNumber(tx.value, 2)}</td>
-                            <td>${tx.station}</td>
-                            <td class="text-bold">${tx.description}</td>
+                            <th>م</th>
+                            <th>قراءة العداد</th>
+                            <th>رقم الحركة</th>
+                            <th>تاريخ حركة الصرف</th>
+                            ${mode === 'region' ? '<th>رقم السيارة</th>' : ''}
+                            <th>كمية الصرف (لتر)</th>
+                            <th>قيمة الصرف (ج.م)</th>
+                            <th>اسم المحطة</th>
+                            <th>نوع الوقود المنصرف</th>
                         </tr>
                     `;
-                });
 
-                chunkDiv.innerHTML = `
-                    <div class="doc-header" style="margin-bottom: 1.5rem;">
-                        <h2 class="doc-title" style="font-size: 1.3rem;">سجل تفاصيل الحركة - ${mode === 'region' ? 'ادارة' : 'سيارة'} ${query} ${monthText ? `- ${monthText}` : ''}</h2>
-                    </div>
-                    <div class="report-table-wrapper">
-                        <table class="details-table">
-                            <thead>
-                                ${headersHtml}
-                            </thead>
-                            <tbody>
-                                ${rowsHtml}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-                pagesWrapper.appendChild(chunkDiv);
+                    let rowsHtml = '';
+                    chunk.forEach((tx, index) => {
+                        const serialNum = (i * chunkSize) + index + 1;
+                        rowsHtml += `
+                            <tr>
+                                <td class="text-number" style="text-align: center;">${serialNum}</td>
+                                <td class="text-number" style="text-align: center;">${tx.odometer || '-'}</td>
+                                <td class="text-number text-bold" style="text-align: center;">${tx.movement_number}</td>
+                                <td class="text-number" style="text-align: center;">${tx.date}</td>
+                                ${mode === 'region' ? `<td class="text-bold" style="text-align: center;">${tx.plate}</td>` : ''}
+                                <td class="text-number text-bold">${formatNumber(tx.quantity, 2)}</td>
+                                <td class="text-number text-bold">${formatNumber(tx.value, 2)}</td>
+                                <td>${tx.station}</td>
+                                <td class="text-bold">${tx.description}</td>
+                            </tr>
+                        `;
+                    });
+
+                    chunkDiv.innerHTML = `
+                        <div class="doc-header" style="margin-bottom: 1.5rem;">
+                            <h2 class="doc-title" style="font-size: 1.3rem;">سجل تفاصيل الحركة - ${mode === 'region' ? 'ادارة' : 'سيارة'} ${query} ${monthText ? `- ${monthText}` : ''} - صفحة ${i + 1} من ${pagesCount}</h2>
+                        </div>
+                        <div class="report-table-wrapper">
+                            <table class="details-table">
+                                <thead>
+                                    ${headersHtml}
+                                </thead>
+                                <tbody>
+                                    ${rowsHtml}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    pagesWrapper.appendChild(chunkDiv);
+                }
             }
 
             // Trigger window print after rendering
