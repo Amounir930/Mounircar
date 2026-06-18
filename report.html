@@ -442,7 +442,7 @@
                         <th>قراءة العداد</th>
                         <th>رقم الحركة</th>
                         <th>تاريخ حركة الصرف</th>
-                        \${mode === 'region' ? '<th>رقم السيارة</th>' : ''}
+                        ${mode === 'region' ? '<th>رقم السيارة</th>' : ''}
                         <th>كمية الصرف (لتر)</th>
                         <th>قيمة الصرف (ج.م)</th>
                         <th>اسم المحطة</th>
@@ -454,33 +454,33 @@
                         const serialNum = (i * chunkSize) + index + 1;
                         rowsHtml += `
                             <tr>
-                                <td class="text-number" style="text-align: center;">\${serialNum}</td>
-                                <td class="text-number" style="text-align: center;">\${tx.odometer || '-'}</td>
-                                <td class="text-number text-bold" style="text-align: center;">\${tx.movement_number}</td>
-                                <td class="text-number" style="text-align: center;">\${tx.date}</td>
-                                \${mode === 'region' ? `<td class="text-bold" style="text-align: center;">\${tx.plate}</td>` : ''}
-                                <td class="text-number text-bold">\${formatNumber(tx.quantity, 2)}</td>
-                                <td class="text-number text-bold">\${formatNumber(tx.value, 2)}</td>
-                                <td>\${tx.station}</td>
-                                <td class="text-bold">\${tx.description}</td>
+                                <td class="text-number" style="text-align: center;">${serialNum}</td>
+                                <td class="text-number" style="text-align: center;">${tx.odometer || '-'}</td>
+                                <td class="text-number text-bold" style="text-align: center;">${tx.movement_number}</td>
+                                <td class="text-number" style="text-align: center;">${tx.date}</td>
+                                ${mode === 'region' ? `<td class="text-bold" style="text-align: center;">${tx.plate}</td>` : ''}
+                                <td class="text-number text-bold">${formatNumber(tx.quantity, 2)}</td>
+                                <td class="text-number text-bold">${formatNumber(tx.value, 2)}</td>
+                                <td>${tx.station}</td>
+                                <td class="text-bold">${tx.description}</td>
                             </tr>
                         `;
                     });
 
                     chunkDiv.innerHTML = `
                         <div class="doc-header" style="margin-bottom: 1.5rem;">
-                            <h2 class="doc-title" style="font-size: 1.3rem;">سجل تفاصيل الحركة - صفحة \${i + 1} من \${pagesCount}</h2>
+                            <h2 class="doc-title" style="font-size: 1.3rem;">سجل تفاصيل الحركة - صفحة ${i + 1} من ${pagesCount}</h2>
                             <p style="font-size: 0.85rem; color: var(--secondary-color); text-align: center; margin-top: 0.25rem;">
-                                تابع لتقرير: \${finalTitle}
+                                تابع لتقرير: ${finalTitle}
                             </p>
                         </div>
                         <div class="report-table-wrapper">
                             <table class="details-table">
                                 <thead>
-                                    <tr>\${headersHtml}</tr>
+                                    <tr>${headersHtml}</tr>
                                 </thead>
                                 <tbody>
-                                    \${rowsHtml}
+                                    ${rowsHtml}
                                 </tbody>
                             </table>
                         </div>
