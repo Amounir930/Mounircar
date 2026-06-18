@@ -718,6 +718,120 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     };
 
+    // Helper to get month text from transactions
+    function getMonthText(transactions) {
+        if (!transactions || transactions.length === 0) return "";
+        const monthsArabic = {
+            "01": "يناير", "02": "فبراير", "03": "مارس", "04": "أبريل",
+            "05": "مايو", "06": "يونيو", "07": "يوليو", "08": "أغسطس",
+            "09": "سبتمبر", "10": "أكتوبر", "11": "نوفمبر", "12": "ديسمبر"
+        };
+        const uniqueMonths = new Set();
+        const uniqueYears = new Set();
+        transactions.forEach(tx => {
+            if (tx.date) {
+                const match = tx.date.match(/^(\d{4})-(\d{2})-/);
+                if (match) {
+                    uniqueYears.add(match[1]);
+                    uniqueMonths.add(match[2]);
+                }
+            }
+        });
+        const yearText = uniqueYears.size > 0 ? Array.from(uniqueYears).sort().join(' - ') : "";
+        if (uniqueMonths.size === 0) return "";
+        const sortedMonths = Array.from(uniqueMonths).sort();
+        const monthNames = sortedMonths.map(m => monthsArabic[m] || m);
+        return monthNames.length === 1 ? `شهر ${monthNames[0]} ${yearText}` : `الأشْهُر: ${monthNames.join('، ')} ${yearText}`;
+    }
+
+    // Helper to generate summary table HTML
+    function getSummaryTableHtml(mode, data, total_quantity, total_value) {
+        const isRegion = (mode === 'region');
+        const header = isRegion 
+            ? `<tr><th>نوع الوقود المنصرف</th><th>إجمالي الكمية (لتر)</th><th>إجمالي القيمة (ج.م)</th><th>عدد الحركات</th></tr>`
+            : `<tr><th>نوع الوقود المنصرف</th><th>إجمالي الكمية (لتر)</th><th>إجمالي القيمة (ج.م)</th></tr>`;
+        
+        let totalTxs = 0;
+        const rows = data.map(item => {
+            if (isRegion) totalTxs += parseInt(item.transactions) || 0;
+            return `<tr>
+                <td class="print-text-bold">${item.description}</td>
+                <td class="print-text-number">${formatNumber(item.quantity, 2)}</td>
+                <td class="print-text-number">${formatNumber(item.value, 2)}</td>
+                ${isRegion ? `<td class="print-text-number">${item.transactions}</td>` : ''}
+            </tr>`;
+        }).join('');
+
+        const totalRow = isRegion
+            ? `<tr class="print-total-row"><td>الإجمالي العام</td><td class="print-text-number print-text-bold">${formatNumber(total_quantity, 2)}</td><td class="print-text-number print-text-bold">${formatNumber(total_value, 2)}</td><td class="print-text-number print-text-bold">${totalTxs}</td></tr>`
+            : `<tr class="print-total-row"><td>الإجمالي العام</td><td class="print-text-number print-text-bold">${formatNumber(total_quantity, 2)}</td><td class="print-text-number print-text-bold">${formatNumber(total_value, 2)}</td></tr>`;
+        
+        return `<table><thead>${header}</thead><tbody>${rows}${totalRow}</tbody></table>`;
+    }
+
+    // Helper to sort print transactions
+    function sortPrintTransactions(mode, txs) {
+        const isRegion = (mode === 'region');
+        return [...txs].sort((a, b) => {
+            const keyA = isRegion ? (a.plate || "") : (a.description || "");
+            const keyB = isRegion ? (b.plate || "") : (b.description || "");
+            if (keyA !== keyB) {
+                return isRegion 
+                    ? keyA.localeCompare(keyB, 'ar', { numeric: true }) 
+                    : keyA.localeCompare(keyB, 'ar');
+            }
+            return (a.date || "").localeCompare(b.date || "");
+        });
+    }
+
+    // Helper to generate detailed transactions table HTML
+    function getDetailedTableHtml(mode, transactions) {
+        if (!transactions || transactions.length === 0) return "";
+        const isRegion = (mode === 'region');
+        const sorted = sortPrintTransactions(mode, transactions);
+        const headers = `<tr><th>م</th><th>قراءة العداد</th><th>رقم الحركة</th><th>تاريخ حركة الصرف</th>${isRegion ? '<th>رقم السيارة</th>' : ''}<th>كمية الصرف (لتر)</th><th>قيمة الصرف (ج.م)</th><th>اسم المحطة</th><th>نوع الوقود المنصرف</th></tr>`;
+        
+        const rows = sorted.map((tx, idx) => `<tr>
+            <td class="print-text-number" style="text-align: center;">${idx + 1}</td>
+            <td class="print-text-number" style="text-align: center;">${tx.odometer || '-'}</td>
+            <td class="print-text-number print-text-bold" style="text-align: center;">${tx.movement_number}</td>
+            <td class="print-text-number" style="text-align: center;">${tx.date || ''}</td>
+            ${isRegion ? `<td class="print-text-bold" style="text-align: center;">${tx.plate || ''}</td>` : ''}
+            <td class="print-text-number print-text-bold">${formatNumber(tx.quantity, 2)}</td>
+            <td class="print-text-number print-text-bold">${formatNumber(tx.value, 2)}</td>
+            <td>${tx.station || ''}</td>
+            <td class="print-text-bold">${tx.description || ''}</td>
+        </tr>`).join('');
+
+        return `<table class="print-details-table"><thead>${headers}</thead><tbody>${rows}</tbody></table>`;
+    }
+
+    // Helper to compile the entire report markup
+    function generateReportMarkup(report) {
+        const { mode, query, data, total_quantity, total_value, transactions } = report;
+        const monthText = getMonthText(transactions || []);
+        const docTitle = mode === 'region' ? `قيمة و كمية الوقود المستهلك علي السيارات - ${query}` : `قيمة و كمية الوقود المستهلك علي السيارة - ${query}`;
+        const tableTitle = mode === 'region' ? 'اجمالي استهلاك السيارات بالمنطقة' : 'تفاصيل استهلاك السيارة من الوقود';
+        const summaryTable = getSummaryTableHtml(mode, data, total_quantity, total_value);
+        const detailedTable = getDetailedTableHtml(mode, transactions);
+        const metaHtml = monthText ? `<p class="print-doc-meta">${monthText}</p>` : '';
+
+        let html = `<div class="print-report-container print-page-chunk">
+            <div class="print-doc-header"><h1 class="print-doc-title">${docTitle}</h1>${metaHtml}</div>
+            <div class="print-table-wrapper"><h2 class="print-table-title">${tableTitle}</h2>${summaryTable}</div>
+            <div class="print-signature-section"><span>مسؤول التشغيل: ........................</span><span>يعتمد: ........................</span></div>
+        </div>`;
+
+        if (transactions && transactions.length > 0) {
+            const detailsTitle = `سجل تفاصيل الحركة - ${mode === 'region' ? 'ادارة' : 'سيارة'} ${query} ${monthText ? `- ${monthText}` : ''}`;
+            html += `<div class="print-report-container print-page-chunk" style="margin-top: 2rem;">
+                <div class="print-doc-header" style="margin-bottom: 1.5rem;"><h2 class="print-doc-title" style="font-size: 1.3rem;">${detailsTitle}</h2></div>
+                <div class="print-table-wrapper">${detailedTable}</div>
+            </div>`;
+        }
+        return html;
+    }
+
     // Handle Print Button
     const printReportBtn = document.getElementById('printReportBtn');
     if (printReportBtn) {
@@ -726,10 +840,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('لا توجد بيانات للطباعة حالياً.');
                 return;
             }
-            // Save print data to localStorage
-            localStorage.setItem('print_report_data', JSON.stringify(activePrintData));
-            // Open report.html in a new tab/window
-            window.open('report.html', '_blank');
+            const printArea = document.getElementById('printArea');
+            if (printArea) {
+                printArea.innerHTML = generateReportMarkup(activePrintData);
+                window.print();
+                printArea.innerHTML = '';
+            }
         });
     }
 });

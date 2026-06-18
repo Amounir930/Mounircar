@@ -995,6 +995,182 @@ tr:hover td {
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
+/* Print Area styles (default hidden on screen) */
+#printArea {
+    display: none;
+}
+
+@media print {
+    /* Hide everything on screen except printArea */
+    body > *:not(#printArea) {
+        display: none !important;
+    }
+    
+    body {
+        background: #ffffff !important;
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        padding: 1cm 0.6cm !important;
+        margin: 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        direction: rtl;
+        text-align: right;
+        font-family: 'Cairo', sans-serif;
+    }
+    
+    #printArea {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    @page {
+        margin: 0;
+        size: A4 portrait;
+    }
+
+    .print-report-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 auto !important;
+        background: #ffffff !important;
+        box-sizing: border-box !important;
+    }
+
+    .print-page-chunk {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+        page-break-after: always !important;
+        break-after: page !important;
+    }
+
+    .print-page-chunk:last-child {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+    }
+
+    .print-doc-header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+    }
+
+    .print-doc-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #0f172a !important;
+        margin-bottom: 0.5rem;
+    }
+
+    .print-doc-meta {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #0f172a !important;
+        margin-top: 0.4rem;
+        text-align: center;
+    }
+
+    .print-table-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin-bottom: 0.8rem;
+        color: #0f172a !important;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .print-table-wrapper {
+        margin-bottom: 2rem;
+    }
+
+    .print-table-wrapper table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        font-size: 8.5pt !important;
+        margin-top: 0.5rem;
+        table-layout: auto !important;
+    }
+
+    .print-table-wrapper th {
+        background-color: #f8fafc !important;
+        color: #0f172a !important;
+        font-weight: 700;
+        padding: 0.4rem 0.5rem !important;
+        border: 1px solid #94a3b8 !important;
+        text-align: right;
+    }
+
+    .print-table-wrapper td {
+        padding: 0.4rem 0.5rem !important;
+        border: 1px solid #94a3b8 !important;
+        color: #334155 !important;
+    }
+
+    .print-total-row td {
+        background-color: #e2e8f0 !important;
+        font-weight: 700 !important;
+        color: #0f172a !important;
+    }
+
+    .print-text-number {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 600;
+        text-align: left;
+        direction: ltr;
+    }
+
+    .print-text-bold {
+        font-weight: 700;
+    }
+
+    .print-details-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        font-size: 7.5pt !important;
+        margin-top: 1rem;
+        table-layout: auto !important;
+    }
+
+    .print-details-table th {
+        background-color: #f8fafc !important;
+        color: #0f172a !important;
+        font-weight: 700;
+        padding: 1px 3px !important;
+        border: 1px solid #94a3b8 !important;
+        text-align: right;
+        line-height: 1.1 !important;
+    }
+
+    .print-details-table td {
+        padding: 1px 3px !important;
+        line-height: 1.1 !important;
+        border: 1px solid #94a3b8 !important;
+        color: #334155 !important;
+    }
+
+    .print-signature-section {
+        margin-top: 2rem !important;
+        display: flex;
+        justify-content: space-between;
+        font-size: 1.1rem;
+        font-weight: 700;
+        padding: 0 2rem;
+        direction: rtl;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+}
+
 
 
 
