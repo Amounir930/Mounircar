@@ -342,6 +342,12 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Signature block -->
+            <div class="signature-section">
+                <span>مسؤول التشغيل: ........................</span>
+                <span>يعتمد: ........................</span>
+            </div>
         </div>
     </div>
 
@@ -499,15 +505,12 @@
                         `;
                     });
 
-                    let signatureHtml = '';
-                    if (i === pagesCount - 1) {
-                        signatureHtml = `
-                            <div class="signature-section">
-                                <span>مسؤول التشغيل: ........................</span>
-                                <span>يعتمد: ........................</span>
-                            </div>
-                        `;
-                    }
+                    const signatureHtml = `
+                        <div class="signature-section">
+                            <span>مسؤول التشغيل: ........................</span>
+                            <span>يعتمد: ........................</span>
+                        </div>
+                    `;
 
                     chunkDiv.innerHTML = `
                         <div class="doc-header" style="margin-bottom: 1.5rem;">
@@ -530,16 +533,6 @@
                     `;
                     pagesWrapper.appendChild(chunkDiv);
                 }
-            } else {
-                // Append signature section to mainPage if no detailed transactions
-                const mainPage = document.getElementById('mainPage');
-                const sigDiv = document.createElement('div');
-                sigDiv.className = 'signature-section';
-                sigDiv.innerHTML = `
-                    <span>مسؤول التشغيل: ........................</span>
-                    <span>يعتمد: ........................</span>
-                `;
-                mainPage.appendChild(sigDiv);
             }
 
             // Trigger window print after rendering
