@@ -331,7 +331,7 @@
                 <a href="javascript:window.close()" class="back-link">
                     <i class="fas fa-arrow-right"></i> إغلاق الصفحة العودة للنظام
                 </a>
-                <button class="btn-print" id="printBtn">
+                <button class="btn-print" onclick="window.print()">
                     <i class="fas fa-print"></i> طباعة التقرير (PDF)
                 </button>
             </div>
@@ -519,31 +519,27 @@
 
             // Render detailed transactions if they exist
             if (transactions.length > 0) {
-                if (mode === 'region') {
-                    // Sort transactions by plate (ascending, naturally) and then date (ascending)
-                    transactions.sort((a, b) => {
-                        const plateA = a.plate || "";
-                        const plateB = b.plate || "";
-                        if (plateA !== plateB) {
-                            return plateA.localeCompare(plateB, 'ar', { numeric: true });
-                        }
-                        const dateA = a.date || "";
-                        const dateB = b.date || "";
-                        return dateA.localeCompare(dateB);
-                    });
-                } else {
-                    // Sort transactions by fuel type (description) and then date (ascending)
-                    transactions.sort((a, b) => {
-                        const descA = a.description || "";
-                        const descB = b.description || "";
-                        if (descA !== descB) {
-                            return descA.localeCompare(descB, 'ar');
-                        }
-                        const dateA = a.date || "";
-                        const dateB = b.date || "";
-                        return dateA.localeCompare(dateB);
-                    });
-                }
+                // Sort transactions by fuel type (description), plate, and date (ascending)
+                transactions.sort((a, b) => {
+                    // 1. Fuel Type (description)
+                    const descA = a.description || "";
+                    const descB = b.description || "";
+                    if (descA !== descB) {
+                        return descA.localeCompare(descB, 'ar');
+                    }
+                    
+                    // 2. Plate Number (plate)
+                    const plateA = a.plate || "";
+                    const plateB = b.plate || "";
+                    if (plateA !== plateB) {
+                        return plateA.localeCompare(plateB, 'ar');
+                    }
+                    
+                    // 3. Date (ascending - oldest first)
+                    const dateA = a.date || "";
+                    const dateB = b.date || "";
+                    return dateA.localeCompare(dateB);
+                });
 
                 const pagesWrapper = document.getElementById('pagesWrapper');
                 const chunkDiv = document.createElement('div');
@@ -600,39 +596,11 @@
                 pagesWrapper.appendChild(chunkDiv);
             }
 
-            // Check if user is on a mobile device (including iPad iOS 13+)
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-                             || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-            // Setup manual print button handler
-            const printBtn = document.getElementById('printBtn');
-            if (printBtn) {
-                printBtn.addEventListener('click', () => {
-                    if (!isMobile) {
-                        // Only auto-close tab on desktop
-                        window.onafterprint = () => {
-                            setTimeout(() => {
-                                window.close();
-                            }, 300);
-                        };
-                    }
-                    window.print();
-                });
-            }
-
-            if (!isMobile) {
-                // Trigger window print automatically after rendering ONLY on desktop
-                setTimeout(() => {
-                    window.onafterprint = () => {
-                        setTimeout(() => {
-                            window.close();
-                        }, 300);
-                    };
-                    window.print();
-                }, 600);
-            }
+            // Trigger window print after rendering
+            setTimeout(() => {
+                window.print();
+            }, 600);
         });
-        // Vercel build trigger
     </script>
 </body>
 </html>

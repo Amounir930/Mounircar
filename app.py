@@ -336,7 +336,7 @@ def search_car():
 
         total_quantity = sum(tx["quantity"] for tx in txs)
         total_value    = sum(tx["value"] for tx in txs)
-        txs.sort(key=lambda x: x.get("date", ""))
+        txs.sort(key=lambda x: x.get("date", ""), reverse=True)
 
         depts = [tx["department"] for tx in txs if tx.get("department")]
         dominant_dept = max(set(depts), key=depts.count) if depts else "غير محدد"
@@ -382,19 +382,7 @@ def search_region():
 
         total_quantity = sum(tx["quantity"] for tx in txs)
         total_value    = sum(tx["value"] for tx in txs)
-        
-        # Sort by plate (ascending, naturally) and then by date (ascending)
-        def sort_key(tx):
-            plate = tx.get("plate", "")
-            date = tx.get("date", "")
-            if not plate:
-                return (0, "", date)
-            match = re.match(r'^(\d+)(.*)', str(plate))
-            if match:
-                return (int(match.group(1)), match.group(2), date)
-            return (9999999, str(plate), date)
-
-        txs.sort(key=sort_key)
+        txs.sort(key=lambda x: x.get("date", ""), reverse=True)
 
         unique_plates  = set(tx["plate"] for tx in txs if tx.get("plate"))
         vehicle_groups = {}
