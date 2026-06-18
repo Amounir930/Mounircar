@@ -229,14 +229,10 @@
             direction: rtl;
         }
 
-        .print-spacer-row, .print-spacer-foot {
-            display: none !important;
-        }
-
         /* Print Media Queries */
         @media print {
             @page {
-                margin: 0;
+                margin: 1cm 0.6cm;
                 size: A4 portrait;
             }
 
@@ -247,7 +243,7 @@
 
             body {
                 background-color: #ffffff !important;
-                padding: 0 0.6cm !important;
+                padding: 0 !important;
                 color: #000000 !important;
                 width: 100% !important;
             }
@@ -261,7 +257,7 @@
             .report-container {
                 border: none !important;
                 box-shadow: none !important;
-                padding: 1cm 0 !important;
+                padding: 0 !important;
                 width: 100% !important;
                 max-width: 100% !important;
                 margin: 0 auto !important;
@@ -270,7 +266,7 @@
 
             .page-chunk {
                 margin: 0 auto !important;
-                padding: 1cm 0 !important;
+                padding: 0 !important;
                 box-sizing: border-box !important;
                 border: none !important;
                 box-shadow: none !important;
@@ -283,16 +279,6 @@
             .page-chunk:last-child {
                 page-break-after: avoid !important;
                 break-after: avoid !important;
-            }
-
-            .print-spacer-row, .print-spacer-foot {
-                display: table-row !important;
-            }
-            .print-spacer-row td, .print-spacer-foot td {
-                height: 1cm !important;
-                border: hidden !important;
-                padding: 0 !important;
-                background: transparent !important;
             }
 
             .no-print {
@@ -558,12 +544,7 @@
                 chunkDiv.className = 'report-container page-chunk';
                 chunkDiv.style.marginTop = '2rem';
                 
-                const colSpanCount = mode === 'region' ? 9 : 8;
-                
                 let headersHtml = `
-                    <tr class="print-spacer-row">
-                        <td colspan="${colSpanCount}"></td>
-                    </tr>
                     <tr>
                         <th>م</th>
                         <th>قراءة العداد</th>
@@ -614,11 +595,6 @@
                             <tbody>
                                 ${rowsHtml}
                             </tbody>
-                            <tfoot class="print-spacer-foot">
-                                <tr>
-                                    <td colspan="${colSpanCount}"></td>
-                                </tr>
-                            </tfoot>
                         </table>
                     </div>
                     ${signatureHtml}
