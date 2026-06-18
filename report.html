@@ -232,7 +232,7 @@
         /* Print Media Queries */
         @media print {
             @page {
-                margin: 0;
+                margin: 1cm 0.6cm;
                 size: A4 portrait;
             }
 
@@ -243,7 +243,7 @@
 
             body {
                 background-color: #ffffff !important;
-                padding: 0 0.6cm !important;
+                padding: 0 !important;
                 color: #000000 !important;
                 width: 100% !important;
             }
@@ -257,7 +257,7 @@
             .report-container {
                 border: none !important;
                 box-shadow: none !important;
-                padding: 1cm 0 !important;
+                padding: 0 !important;
                 width: 100% !important;
                 max-width: 100% !important;
                 margin: 0 auto !important;
@@ -266,17 +266,19 @@
 
             .page-chunk {
                 margin: 0 auto !important;
-                padding: 1cm 0 !important;
+                padding: 0 !important;
                 box-sizing: border-box !important;
                 border: none !important;
                 box-shadow: none !important;
                 width: 100% !important;
                 max-width: 100% !important;
                 page-break-after: always !important;
+                break-after: page !important;
             }
 
             .page-chunk:last-child {
                 page-break-after: avoid !important;
+                break-after: avoid !important;
             }
 
             .no-print {
