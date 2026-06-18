@@ -670,4 +670,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error(err);
             });
     };
+
+    // Handle Print Button
+    const printReportBtn = document.getElementById('printReportBtn');
+    if (printReportBtn) {
+        printReportBtn.addEventListener('click', () => {
+            const originalTitle = document.title;
+            const activeTitle = mainTitle ? mainTitle.innerText : "تقرير حركات صرف المركبة";
+            // Set dynamic filename safe title for browser PDF generator
+            document.title = activeTitle.trim().replace(/\s+/g, '_');
+            window.print();
+            // Restore original document title
+            document.title = originalTitle;
+        });
+    }
 });
+
