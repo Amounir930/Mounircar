@@ -229,10 +229,14 @@
             direction: rtl;
         }
 
+        .print-spacer-row, .print-spacer-foot {
+            display: none !important;
+        }
+
         /* Print Media Queries */
         @media print {
             @page {
-                margin: 1cm 0.6cm;
+                margin: 0;
                 size: A4 portrait;
             }
 
@@ -243,7 +247,7 @@
 
             body {
                 background-color: #ffffff !important;
-                padding: 0 !important;
+                padding: 0 0.6cm !important;
                 color: #000000 !important;
                 width: 100% !important;
             }
@@ -257,7 +261,7 @@
             .report-container {
                 border: none !important;
                 box-shadow: none !important;
-                padding: 0 !important;
+                padding: 1cm 0 !important;
                 width: 100% !important;
                 max-width: 100% !important;
                 margin: 0 auto !important;
@@ -266,7 +270,7 @@
 
             .page-chunk {
                 margin: 0 auto !important;
-                padding: 0 !important;
+                padding: 1cm 0 !important;
                 box-sizing: border-box !important;
                 border: none !important;
                 box-shadow: none !important;
@@ -279,6 +283,16 @@
             .page-chunk:last-child {
                 page-break-after: avoid !important;
                 break-after: avoid !important;
+            }
+
+            .print-spacer-row, .print-spacer-foot {
+                display: table-row !important;
+            }
+            .print-spacer-row td, .print-spacer-foot td {
+                height: 1cm !important;
+                border: none !important;
+                padding: 0 !important;
+                background: transparent !important;
             }
 
             .no-print {
@@ -517,24 +531,50 @@
 
             // Render detailed transactions if they exist
             if (transactions.length > 0) {
-                // Sort transactions by date descending (same as dashboard view)
-                transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                // Sort transactions by fuel type (description), plate, and date (ascending)
+                transactions.sort((a, b) => {
+                    // 1. Fuel Type (description)
+                    const descA = a.description || "";
+                    const descB = b.description || "";
+                    if (descA !== descB) {
+                        return descA.localeCompare(descB, 'ar');
+                    }
+                    
+                    // 2. Plate Number (plate)
+                    const plateA = a.plate || "";
+                    const plateB = b.plate || "";
+                    if (plateA !== plateB) {
+                        return plateA.localeCompare(plateB, 'ar');
+                    }
+                    
+                    // 3. Date (ascending - oldest first)
+                    const dateA = a.date || "";
+                    const dateB = b.date || "";
+                    return dateA.localeCompare(dateB);
+                });
 
                 const pagesWrapper = document.getElementById('pagesWrapper');
                 const chunkDiv = document.createElement('div');
                 chunkDiv.className = 'report-container page-chunk';
                 chunkDiv.style.marginTop = '2rem';
                 
+                const colSpanCount = mode === 'region' ? 9 : 8;
+                
                 let headersHtml = `
-                    <th>م</th>
-                    <th>قراءة العداد</th>
-                    <th>رقم الحركة</th>
-                    <th>تاريخ حركة الصرف</th>
-                    ${mode === 'region' ? '<th>رقم السيارة</th>' : ''}
-                    <th>كمية الصرف (لتر)</th>
-                    <th>قيمة الصرف (ج.م)</th>
-                    <th>اسم المحطة</th>
-                    <th>نوع الوقود المنصرف</th>
+                    <tr class="print-spacer-row">
+                        <td colspan="${colSpanCount}"></td>
+                    </tr>
+                    <tr>
+                        <th>م</th>
+                        <th>قراءة العداد</th>
+                        <th>رقم الحركة</th>
+                        <th>تاريخ حركة الصرف</th>
+                        ${mode === 'region' ? '<th>رقم السيارة</th>' : ''}
+                        <th>كمية الصرف (لتر)</th>
+                        <th>قيمة الصرف (ج.م)</th>
+                        <th>اسم المحطة</th>
+                        <th>نوع الوقود المنصرف</th>
+                    </tr>
                 `;
 
                 let rowsHtml = '';
@@ -569,11 +609,16 @@
                     <div class="report-table-wrapper">
                         <table class="details-table">
                             <thead>
-                                <tr>${headersHtml}</tr>
+                                ${headersHtml}
                             </thead>
                             <tbody>
                                 ${rowsHtml}
                             </tbody>
+                            <tfoot class="print-spacer-foot">
+                                <tr>
+                                    <td colspan="${colSpanCount}"></td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                     ${signatureHtml}
