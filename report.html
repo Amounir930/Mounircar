@@ -328,7 +328,7 @@
             <!-- Document Header -->
             <div class="doc-header">
                 <h1 class="doc-title" id="docTitle">قيمة و كمية الوقود المستهلك علي السيارات</h1>
-                <p class="doc-meta" id="docMonth" style="font-size: 1.1rem; font-weight: 600; color: var(--primary-color); margin-top: 0.3rem; text-align: center;"></p>
+                <p class="doc-meta" id="docMonth" style="font-size: 1.4rem; font-weight: 700; color: var(--primary-color); margin-top: 0.4rem; text-align: center;"></p>
             </div>
 
             <!-- Results Table Section -->
@@ -376,22 +376,30 @@
                 };
                 
                 const uniqueMonths = new Set();
+                const uniqueYears = new Set();
                 transactions.forEach(tx => {
                     if (tx.date) {
-                        const match = tx.date.match(/-(\d{2})-/);
-                        if (match && match[1]) {
-                            uniqueMonths.add(match[1]);
+                        const match = tx.date.match(/^(\d{4})-(\d{2})-/);
+                        if (match) {
+                            uniqueYears.add(match[1]);
+                            uniqueMonths.add(match[2]);
                         }
                     }
                 });
+                
+                let yearText = "";
+                if (uniqueYears.size > 0) {
+                    const sortedYears = Array.from(uniqueYears).sort();
+                    yearText = sortedYears.join(' - ');
+                }
                 
                 if (uniqueMonths.size > 0) {
                     const sortedMonths = Array.from(uniqueMonths).sort();
                     const monthNames = sortedMonths.map(m => monthsArabic[m] || m);
                     if (monthNames.length === 1) {
-                        monthText = `شهر ${monthNames[0]}`;
+                        monthText = `شهر ${monthNames[0]} ${yearText}`;
                     } else {
-                        monthText = `الأشهر: ${monthNames.join('، ')}`;
+                        monthText = `الأشهر: ${monthNames.join('، ')} ${yearText}`;
                     }
                 }
             }
