@@ -57,6 +57,11 @@ def login():
 def admin_page():
     return send_from_directory('.', 'admin.html')
 
+@app.route('/report')
+@app.route('/report.html')
+def report_page():
+    return send_from_directory('.', 'report.html')
+
 @app.route('/index.html')
 def index_html():
     return redirect(url_for('index'))
