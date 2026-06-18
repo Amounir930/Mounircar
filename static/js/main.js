@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let uniqueRegions = [];
     let debounceTimer;
     let currentMode = 'car'; // 'car' or 'region'
+    let activePrintData = null;
     
     // Sort and search state cache
     let currentCarTransactions = [];
@@ -579,6 +580,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 carResultsGrid.style.display = 'grid';
                 regionResultsGrid.style.display = 'none';
 
+                // Save print data
+                activePrintData = {
+                    mode: 'car',
+                    query: plate,
+                    data: descriptionTotals,
+                    total_quantity: totalQuantity,
+                    total_value: totalValue
+                };
+
                 spinner.style.display = 'none';
                 dashboardContent.classList.add('active');
             })
@@ -655,6 +665,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 regionResultsGrid.style.display = 'grid';
                 carResultsGrid.style.display = 'none';
 
+                // Save print data
+                activePrintData = {
+                    mode: 'region',
+                    query: regionName,
+                    data: vehiclesList,
+                    total_quantity: totalQuantity,
+                    total_value: totalValue
+                };
+
                 spinner.style.display = 'none';
                 dashboardContent.classList.add('active');
             })
@@ -675,13 +694,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const printReportBtn = document.getElementById('printReportBtn');
     if (printReportBtn) {
         printReportBtn.addEventListener('click', () => {
-            const originalTitle = document.title;
-            const activeTitle = mainTitle ? mainTitle.innerText : "تقرير حركات صرف المركبة";
-            // Set dynamic filename safe title for browser PDF generator
-            document.title = activeTitle.trim().replace(/\s+/g, '_');
-            window.print();
-            // Restore original document title
-            document.title = originalTitle;
+            if (!activePrintData) {
+                alert('لا توجد بيانات للطباعة حالياً.');
+                return;
+            }
+            // Save print data to localStorage
+            localStorage.setItem('print_report_data', JSON.stringify(activePrintData));
+            // Open report.html in a new tab/window
+            window.open('report.html', '_blank');
         });
     }
 });

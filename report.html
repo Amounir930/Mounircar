@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تقرير حركات صرف الوقود</title>
+    <!-- Google Fonts for Cairo & Outfit -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Outfit:wght@500;700&display=swap">
+    <!-- Font Awesome for premium icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #0f172a;
+            --secondary-color: #475569;
+            --border-color: #cbd5e1;
+            --success-color: #059669;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f8fafc;
+            color: var(--primary-color);
+            direction: rtl;
+            text-align: right;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .report-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+
+        /* Header print button */
+        .actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 1rem;
+        }
+
+        .back-link {
+            color: var(--secondary-color);
+            text-decoration: none;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--primary-color);
+        }
+
+        .btn-print {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.8rem;
+            border-radius: 10px;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 10px rgba(5, 150, 105, 0.25);
+            transition: all 0.2s;
+        }
+
+        .btn-print:hover {
+            background-color: #047857;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(5, 150, 105, 0.35);
+        }
+
+        /* Document Header */
+        .doc-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .logo-box {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #f1f5f9;
+            border-radius: 16px;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .logo-box i {
+            font-size: 2rem;
+            color: #0284c7;
+        }
+
+        .doc-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .doc-meta {
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+        }
+
+        /* Tables */
+        .report-table-wrapper {
+            margin-bottom: 2rem;
+        }
+
+        .table-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .table-title i {
+            color: #0284c7;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+            margin-top: 0.5rem;
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: var(--primary-color);
+            font-weight: 700;
+            padding: 0.9rem 1rem;
+            border: 1px solid var(--border-color);
+            text-align: right;
+        }
+
+        td {
+            padding: 0.9rem 1rem;
+            border: 1px solid var(--border-color);
+            color: #334155;
+        }
+
+        tr:nth-child(even) td {
+            background-color: #fcfdfe;
+        }
+
+        .text-number {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            text-align: left;
+            direction: ltr;
+        }
+
+        .text-bold {
+            font-weight: 700;
+        }
+
+        .total-row {
+            background-color: #f1f5f9 !important;
+            font-weight: 700;
+        }
+
+        .total-row td {
+            color: var(--primary-color);
+            font-weight: 700;
+            background-color: #f1f5f9 !important;
+        }
+
+        /* Footer stamp */
+        .report-footer {
+            margin-top: 3rem;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 1.5rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--secondary-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Print Media Queries */
+        @media print {
+            @page {
+                margin: 1.2cm 1.5cm;
+                size: A4 portrait;
+            }
+
+            body {
+                background-color: #ffffff !important;
+                padding: 0 !important;
+                color: #000000 !important;
+            }
+
+            .report-container {
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            table {
+                font-size: 10pt !important;
+            }
+
+            th, td {
+                border: 1px solid #94a3b8 !important;
+                padding: 0.6rem 0.8rem !important;
+            }
+
+            .total-row td {
+                background-color: #e2e8f0 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="report-container">
+        <!-- Action bar (hidden in print) -->
+        <div class="actions-bar no-print">
+            <a href="javascript:window.close()" class="back-link">
+                <i class="fas fa-arrow-right"></i> إغلاق الصفحة العودة للنظام
+            </a>
+            <button class="btn-print" onclick="window.print()">
+                <i class="fas fa-print"></i> طباعة التقرير (PDF)
+            </button>
+        </div>
+
+        <!-- Document Header -->
+        <div class="doc-header">
+            <div class="logo-box">
+                <i class="fas fa-file-invoice-dollar"></i>
+            </div>
+            <h1 class="doc-title" id="docTitle">قيمة و كمية الوقود المستهلك علي السيارات</h1>
+            <p class="doc-meta" id="docMeta">تاريخ إصدار التقرير: <span id="printDate"></span></p>
+        </div>
+
+        <!-- Results Table Section -->
+        <div class="report-table-wrapper">
+            <h2 class="table-title" id="tableTitle"><i class="fas fa-list-ul"></i> ملخص حركة استهلاك الوقود</h2>
+            <table id="reportTable">
+                <thead id="tableHead">
+                    <!-- Dynamic Headers -->
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Dynamic Rows -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="report-footer">
+            <span>منظومة إدارة حركات صرف الوقود الذكية</span>
+            <span id="pageUrl"></span>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load print date
+            const dateSpan = document.getElementById('printDate');
+            const now = new Date();
+            const option = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            dateSpan.innerText = now.toLocaleDateString('ar-EG', option);
+
+            // Load site url for reference
+            document.getElementById('pageUrl').innerText = window.location.host || "mounir.60sec.shop";
+
+            // Load localStorage report data
+            const rawData = localStorage.getItem('print_report_data');
+            if (!rawData) {
+                alert('لم يتم العثور على بيانات التقرير المعنية بالطباعة.');
+                return;
+            }
+
+            const report = JSON.parse(rawData);
+            const { mode, query, data, total_quantity, total_value } = report;
+
+            // Set Document title & UI Title
+            let finalTitle = "";
+            if (mode === 'region') {
+                finalTitle = `قيمة و كمية الوقود المستهلك علي السيارات - ${query}`;
+                document.getElementById('tableTitle').innerHTML = '<i class="fas fa-car-side"></i> تفاصيل استهلاك السيارات بالمنطقة';
+            } else {
+                finalTitle = `قيمة و كمية الوقود المستهلك علي السيارة - ${query}`;
+                document.getElementById('tableTitle').innerHTML = '<i class="fas fa-gas-pump"></i> تفاصيل استهلاك السيارة من الوقود';
+            }
+            
+            document.getElementById('docTitle').innerText = finalTitle;
+            document.title = finalTitle.replace(/\s+/g, '_');
+
+            // Format numbers helper
+            const formatNumber = (num, decimals = 2) => {
+                return new Intl.NumberFormat('en-US', {
+                    minimumFractionDigits: decimals,
+                    maximumFractionDigits: decimals
+                }).format(num);
+            };
+
+            // Build Table based on Mode
+            const tHead = document.getElementById('tableHead');
+            const tBody = document.getElementById('tableBody');
+
+            if (mode === 'region') {
+                // Table header for region
+                tHead.innerHTML = `
+                    <tr>
+                        <th>نوع الوقود المنصرف</th>
+                        <th>إجمالي الكمية (لتر)</th>
+                        <th>إجمالي القيمة (ج.م)</th>
+                        <th>عدد الحركات</th>
+                    </tr>
+                `;
+
+                let totalTxs = 0;
+                // Add rows
+                data.forEach(veh => {
+                    totalTxs += parseInt(veh.transactions) || 0;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="text-bold">${veh.description}</td>
+                        <td class="text-number">${formatNumber(veh.quantity, 2)}</td>
+                        <td class="text-number">${formatNumber(veh.value, 2)}</td>
+                        <td class="text-number">${veh.transactions}</td>
+                    `;
+                    tBody.appendChild(tr);
+                });
+
+                // Add Total row
+                const trTotal = document.createElement('tr');
+                trTotal.className = 'total-row';
+                trTotal.innerHTML = `
+                    <td>الإجمالي العام</td>
+                    <td class="text-number text-bold">${formatNumber(total_quantity, 2)}</td>
+                    <td class="text-number text-bold">${formatNumber(total_value, 2)}</td>
+                    <td class="text-number text-bold">${totalTxs}</td>
+                `;
+                tBody.appendChild(trTotal);
+
+            } else {
+                // Table header for car
+                tHead.innerHTML = `
+                    <tr>
+                        <th>نوع الوقود المنصرف</th>
+                        <th>إجمالي الكمية (لتر)</th>
+                        <th>إجمالي القيمة (ج.م)</th>
+                    </tr>
+                `;
+
+                // Add rows
+                data.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="text-bold">${item.description}</td>
+                        <td class="text-number">${formatNumber(item.quantity, 2)}</td>
+                        <td class="text-number">${formatNumber(item.value, 2)}</td>
+                    `;
+                    tBody.appendChild(tr);
+                });
+
+                // Add Total row
+                const trTotal = document.createElement('tr');
+                trTotal.className = 'total-row';
+                trTotal.innerHTML = `
+                    <td>الإجمالي العام</td>
+                    <td class="text-number text-bold">${formatNumber(total_quantity, 2)}</td>
+                    <td class="text-number text-bold">${formatNumber(total_value, 2)}</td>
+                `;
+                tBody.appendChild(trTotal);
+            }
+
+            // Trigger window print after rendering
+            setTimeout(() => {
+                window.print();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
