@@ -328,6 +328,7 @@
             <!-- Document Header -->
             <div class="doc-header">
                 <h1 class="doc-title" id="docTitle">قيمة و كمية الوقود المستهلك علي السيارات</h1>
+                <p class="doc-meta" id="docMonth" style="font-size: 1.1rem; font-weight: 600; color: var(--primary-color); margin-top: 0.3rem; text-align: center;"></p>
             </div>
 
             <!-- Results Table Section -->
@@ -364,6 +365,45 @@
             const report = JSON.parse(rawData);
             const { mode, query, data, total_quantity, total_value } = report;
             const transactions = report.transactions || [];
+
+            // Extract month from transaction dates
+            let monthText = "";
+            if (transactions.length > 0) {
+                const monthsArabic = {
+                    "01": "يناير", "02": "فبراير", "03": "مارس", "04": "أبريل",
+                    "05": "مايو", "06": "يونيو", "07": "يوليو", "08": "أغسطس",
+                    "09": "سبتمبر", "10": "أكتوبر", "11": "نوفمبر", "12": "ديسمبر"
+                };
+                
+                const uniqueMonths = new Set();
+                transactions.forEach(tx => {
+                    if (tx.date) {
+                        const match = tx.date.match(/-(\d{2})-/);
+                        if (match && match[1]) {
+                            uniqueMonths.add(match[1]);
+                        }
+                    }
+                });
+                
+                if (uniqueMonths.size > 0) {
+                    const sortedMonths = Array.from(uniqueMonths).sort();
+                    const monthNames = sortedMonths.map(m => monthsArabic[m] || m);
+                    if (monthNames.length === 1) {
+                        monthText = `شهر ${monthNames[0]}`;
+                    } else {
+                        monthText = `الأشهر: ${monthNames.join('، ')}`;
+                    }
+                }
+            }
+
+            const docMonthEl = document.getElementById('docMonth');
+            if (docMonthEl) {
+                if (monthText) {
+                    docMonthEl.innerText = monthText;
+                } else {
+                    docMonthEl.style.display = 'none';
+                }
+            }
 
             // Set Document title & UI Title
             let finalTitle = "";
@@ -516,7 +556,7 @@
                         <div class="doc-header" style="margin-bottom: 1.5rem;">
                             <h2 class="doc-title" style="font-size: 1.3rem;">سجل تفاصيل الحركة - صفحة ${i + 1} من ${pagesCount}</h2>
                             <p style="font-size: 0.85rem; color: var(--secondary-color); text-align: center; margin-top: 0.25rem;">
-                                تابع لتقرير: ${finalTitle}
+                                تابع لتقرير: ${finalTitle} ${monthText ? `(${monthText})` : ''}
                             </p>
                         </div>
                         <div class="report-table-wrapper">
