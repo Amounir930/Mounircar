@@ -229,6 +229,17 @@
             direction: rtl;
         }
 
+        .designer-footer {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 1.5rem;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 0.5rem;
+            width: 100%;
+            direction: rtl;
+        }
+
         /* Print Media Queries */
         @media print {
             @page {
@@ -238,6 +249,12 @@
 
             .signature-section {
                 margin-top: 2rem !important;
+                page-break-inside: avoid !important;
+            }
+
+            .designer-footer {
+                margin-top: 1rem !important;
+                border-top: 1px dashed #94a3b8 !important;
                 page-break-inside: avoid !important;
             }
 
@@ -328,6 +345,7 @@
             <!-- Document Header -->
             <div class="doc-header">
                 <h1 class="doc-title" id="docTitle">قيمة و كمية الوقود المستهلك علي السيارات</h1>
+                <p class="doc-meta" id="docMeta" style="font-size: 0.85rem; color: var(--secondary-color); margin-top: 0.25rem;">تاريخ إصدار التقرير: <span id="printDate"></span></p>
             </div>
 
             <!-- Results Table Section -->
@@ -348,6 +366,11 @@
                 <span>مسؤول التشغيل: ........................</span>
                 <span>يعتمد: ........................</span>
             </div>
+
+            <!-- Designer Footer -->
+            <div class="designer-footer">
+                تصميم و إدارة: منير عمر
+            </div>
         </div>
     </div>
 
@@ -364,6 +387,14 @@
             const report = JSON.parse(rawData);
             const { mode, query, data, total_quantity, total_value } = report;
             const transactions = report.transactions || [];
+
+            // Load print date
+            const dateSpan = document.getElementById('printDate');
+            if (dateSpan) {
+                const now = new Date();
+                const option = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+                dateSpan.innerText = now.toLocaleDateString('ar-EG', option);
+            }
 
             // Set Document title & UI Title
             let finalTitle = "";
@@ -509,6 +540,9 @@
                         <div class="signature-section">
                             <span>مسؤول التشغيل: ........................</span>
                             <span>يعتمد: ........................</span>
+                        </div>
+                        <div class="designer-footer">
+                            تصميم و إدارة: منير عمر
                         </div>
                     `;
 
