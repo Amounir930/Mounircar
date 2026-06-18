@@ -382,7 +382,7 @@ def search_region():
         unique_plates  = set(tx["plate"] for tx in txs if tx.get("plate"))
         vehicle_groups = {}
         for tx in txs:
-            desc = tx.get("description") or "بدون وصف كارت"
+            desc = tx.get("description") or "بدون نوع الوقود المنصرف"
             if desc not in vehicle_groups:
                 vehicle_groups[desc] = {"description": desc, "quantity": 0.0, "value": 0.0, "transactions": 0}
             vehicle_groups[desc]["quantity"]     += tx["quantity"]
